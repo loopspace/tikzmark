@@ -1,0 +1,408 @@
+% \iffalse meta-comment
+%<*internal>
+\iffalse
+%</internal>
+%<*readme>
+----------------------------------------------------------------
+tikzmark --- remembering absolute positioning with TikZ
+E-mail: stacey@math.ntnu.no
+Released under the LaTeX Project Public License v1.3c or later
+See http://www.latex-project.org/lppl.txt
+----------------------------------------------------------------
+
+The tikzmark package defines a command to "remember" a position
+on a page for later (or earlier) use, primarily (but not
+exclusively) with TikZ.
+%</readme>
+%<*internal>
+\fi
+\def\nameofplainTeX{plain}
+\ifx\fmtname\nameofplainTeX\else
+  \expandafter\begingroup
+\fi
+%</internal>
+%<*install>
+\input docstrip.tex
+\keepsilent
+\askforoverwritefalse
+\preamble
+----------------------------------------------------------------
+tikzmark --- remembering absolute positioning with TikZ.
+E-mail: stacey@math.ntnu.no
+Released under the LaTeX Project Public License v1.3c or later
+See http://www.latex-project.org/lppl.txt
+----------------------------------------------------------------
+
+\endpreamble
+\postamble
+
+Copyright (C) 2011 by Andrew Stacey <stacey@math.ntnu.no>
+
+This work may be distributed and/or modified under the
+conditions of the LaTeX Project Public License (LPPL), either
+version 1.3c of this license or (at your option) any later
+version.  The latest version of this license is in the file:
+
+http://www.latex-project.org/lppl.txt
+
+This work is "maintained" (as per LPPL maintenance status) by
+Andrew Stacey.
+
+This work consists of the file  tikzmark.dtx
+and the derived files           tikzmark.ins,
+                                tikzmark.pdf,
+                                tikzlibrarytikzmark.code.tex, and
+                                tikzlibrarytikzmarkextras.code.tex
+
+\endpostamble
+\usedir{tex/latex/tikzmark}
+\generate{
+  \file{tikzlibrarytikzmark.code.tex}{\from{\jobname.dtx}{tikzlibrary}}
+}
+\generate{
+  \file{tikzlibrarytikzmarkextras.code.tex}{\from{\jobname.dtx}{extras}}
+}
+%</install>
+%<install>\endbatchfile
+%<*internal>
+\usedir{source/latex/tikzmark}
+\generate{
+  \file{\jobname.ins}{\from{\jobname.dtx}{install}}
+}
+\nopreamble\nopostamble
+\usedir{doc/latex/demopkg}
+\generate{
+  \file{README.txt}{\from{\jobname.dtx}{readme}}
+}
+\ifx\fmtname\nameofplainTeX
+  \expandafter\endbatchfile
+\else
+  \expandafter\endgroup
+\fi
+%</internal>
+%<*package>
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{tikzmark}[2012/10/24 v1.0 TikZmark]
+%</package>
+%<*driver>
+\documentclass{ltxdoc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+%\usepackage{morefloats}
+\usepackage{tikz}
+\usetikzlibrary{tikzmark,tikzmarkextras}
+\usepackage[numbered]{hypdoc}
+\definecolor{lstbgcolor}{rgb}{0.9,0.9,0.9} 
+ 
+\usepackage{listings}
+\lstloadlanguages{[LaTeX]TeX}
+\lstset{gobble=2,breakatwhitespace=true,breaklines=true,language=TeX}
+ 
+\usepackage{fancyvrb}
+
+\newenvironment{example}
+  {\VerbatimEnvironment
+   \begin{VerbatimOut}[gobble=2]{example.out}}
+  {\end{VerbatimOut}
+   \begin{center}
+%   \setlength{\parindent}{0pt}
+   \fbox{\begin{minipage}{.9\linewidth}
+     \lstset{breakatwhitespace=true,breaklines=true,language=TeX,basicstyle=\small}
+     \lstinputlisting[]{example.out}
+   \end{minipage}}
+
+   \fbox{\begin{minipage}{.9\linewidth}
+     \input{example.out}
+   \end{minipage}}
+\end{center}
+}
+\EnableCrossrefs
+\CodelineIndex
+\RecordChanges
+\begin{document}
+  \DocInput{\jobname.dtx}
+\end{document}
+%</driver>
+% \fi
+%
+%
+% \CharacterTable
+%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%   Digits        \0\1\2\3\4\5\6\7\8\9
+%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%   Dollar        \$     Percent       \%     Ampersand     \&
+%   Acute accent  \'     Left paren    \(     Right paren   \)
+%   Asterisk      \*     Plus          \+     Comma         \,
+%   Minus         \-     Point         \.     Solidus       \/
+%   Colon         \:     Semicolon     \;     Less than     \<
+%   Equals        \=     Greater than  \>     Question mark \?
+%   Commercial at \@     Left bracket  \[     Backslash     \\
+%   Right bracket \]     Circumflex    \^     Underscore    \_
+%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%   Right brace   \}     Tilde         \~}
+%
+%
+% \changes{1.0}{2011/05/03}{Converted to DTX file}
+%
+% \DoNotIndex{\newcommand,\newenvironment}
+%
+% \providecommand*{\url}{\texttt}
+% \GetFileInfo{tikzmark.dtx}
+% \title{The \textsf{tikzmark} package}
+% \author{Andrew Stacey \\ \url{stacey@math.ntnu.no}}
+% \date{\fileversion~from \filedate}
+%
+%
+% \maketitle
+%
+% 
+% \section{Introduction}
+%
+% The \Verb+\tikzmark+ macro burst onto the scene in a blaze of glory on \href{http://tex.stackexchange.com}{TeX-SX}.
+% Since then, it has proved embarrassingly (to its original author) popular.
+% The idea behind it is extremely simple: that the machinery underneath TikZ provides a way to ``mark'' a point on a page for further use.
+% This functionality is already provided by several other packages.
+% The point of this one is that as TikZ can provide this feature, if already loading TikZ then it makes sense to use the TikZ version than another version.
+% Moreover, if the goal is to use these marks with some TikZ code then this version is already set up for that purpose (not that it would be exactly difficult to add this to any of the other implementations).
+%
+% \section{Use}
+%
+% Using the \Verb+\tikzmark+ is extremely simple.
+% You need to load the \Verb+tikz+ package and then load \Verb+tikzmark+ as a \Verb+tikzlibrary+.
+% Thus in your preamble you should have something like:
+%
+% \begin{lstlisting}
+% \usepackage{tikz}
+% \usetikzlibrary{tikzmark}
+% \end{lstlisting}
+%
+% In your document, you can now type \Verb+\tikzmark{<name>}+ at a point that you want to remember.
+% This will save a mark with name \Verb+<name>+ for use later (or earlier).
+% To use it in a \Verb+\tikz+ or \Verb+tikzpicture+, simply use the \Verb+pic+ coordinate system:
+%
+% \begin{lstlisting}
+% \tikz[remember picture] \draw[overlay] (0,0) -- (pic cs:<name>);
+% \end{lstlisting}
+%
+% There are two important points to note:
+%
+% \begin{enumerate}
+% \item The enveloping \Verb+\tikz+ or \Verb+tikzpicture+ must have the key \Verb+remember picture+ set.
+%
+% This is because of how TikZ coordinates work.
+% The coordinates inside a TikZ picture are relative to its origin, so that origin can move around on the page and not affect the internals of the picture.
+% To use a point outside the picture, therefore, the current picture not only has to know where that point is on the page it also has to know where it is on the page.
+% Hence the \Verb+remember picture+ key must be set.
+% \item The drawing command must have the \Verb+overlay+ key set (or be in a scope or picture where it is set).
+% 
+% This is to keep the bounding box of the current picture under control.
+% Otherwise, it would grow to encompass the remembered point as well as the current picture.
+% \end{enumerate}
+%
+% 
+%
+% \section{History}
+%
+% I wrote the original \Verb+\tikzmark+ macro in 2009 for use in lecture slides prepared with the \Verb+beamer+ package.
+% It's original definition was:
+%
+% \begin{lstlisting}
+% \newcommand{\tikzmark}[1]{\tikz[overlay,remember picture] \node (#1) {};}
+% \end{lstlisting}
+%
+% Its first use was thus the (inelegant) code:
+%
+% \begin{lstlisting}
+% \begin{frame}
+% \frametitle{Structure of Continuous Functions}
+%
+% \begin{tikzpicture}[overlay, remember picture]
+% \useasboundingbox (0,0);
+% \draw<2-|trans: 0|handout: 0>[red,->] (bsp) .. controls +(-1,-1) and ($(cnvs.north)+(1,1)$) .. ($(cnvs.north)+(0,1)$) .. controls ($(cnvs.north)+(-1,1)$) and +(-1,0) .. (cnvs.north);
+% \draw<3-|trans: 0|handout: 0>[green!50!black,->] (cplt) .. controls +(-1,-1) and +(-1,0) .. (mcplt.north);
+% \draw<4-|trans: 0|handout: 0>[blue,->] (norm) .. controls +(-1,-.5) and ($(nvs.north)+(0,1.5)$) .. ($(nvs.north)+(0,1.5)$) .. controls ($(nvs.north)+(-1.5,1.5)$) and +(-1.5,0) .. (nvs.north);
+% \draw<5-|trans: 0|handout: 0>[purple,->] (vector) .. controls +(-1,-1) and ($(vsp.north)+(2,2)$) .. ($(vsp.north)+(0,2)$) .. controls ($(vsp.north)+(-2,2)$) and +(-2,0) .. (vsp.north);
+% \end{tikzpicture}
+%
+% \begin{theorem}
+% \centering
+% \(\big(C([0,1],\R),d_\infty\big)\) \\
+% is a \\
+% \alert{Banach\tikzmark{bsp} space}
+% \end{theorem}
+%
+% \pause
+% \bigskip
+%
+% \begin{itemize}
+% \item[\tikzmark{cnvs}] {\color<.(2)->{green!50!black}Comp\tikzmark{cplt}lete} {\color<.(3)->{blue}nor\tikzmark{norm}med} {\color<.(4)->{purple}vector\tikzmark{vector} space}.
+%
+% \bigskip
+% \bigskip
+% \pause
+%
+% \begin{itemize}[<+->]
+% \item[\tikzmark{mcplt}] {\color{green!50!black}Cauchy sequences converge.}
+% \medskip
+% \item[\tikzmark{nvs}] {\color{blue}Metric from a norm.}
+% \medskip
+% \item[\tikzmark{vsp}] {\color{purple}Functions behave like vectors.}
+% \end{itemize}
+% \end{itemize}
+%
+% \end{frame}
+% \end{lstlisting}
+%
+% This produced, on the final slide, Figure~\ref{fig:tikzmarkex}.
+%
+% \begin{figure}
+% \centering
+% \includegraphics{tikzmark_example}
+% \caption{First use of tikzmark}
+% \label{fig:tikzmarkex}
+% \end{figure}
+%
+% Its first appearance on \href{http://tex.stackexchange.com}{TeX-SX} was in an \href{http://tex.stackexchange.com/a/316/86}{answer} to a question about how to put overlapping braces on a mathematical text.
+% This was in July 2010.
+% The opening statement of the answer was not overly encouraging: ``This may not be the best solution\dots''.
+% And for a macro that would go on to become quite ubiquitous, its initial appearance only garnered it 2 votes.
+%
+% However, it started out in life as a useful macro for me and as such I found more uses for it in my own code and thus more opportunity for using it to answer questions on TeX-SX.
+% The one that seems to have been where it got noticed came in \href{http://tex.stackexchange.com/a/1570/86}{August 2010}, again about putting braces in text but in a more complicated fashion.
+% From this answer, it got picked up, picked over, and picked apart.
+% A common use was in highlighting or adding marks to text.
+%
+% Gradually, as it got used, it developed.
+% The current version dates from an answer given in \href{http://tex.stackexchange.com/a/50054/86}{March 2012} where the question was actually about \Verb+\tikzmark+.
+% The new version added two important features: a TikZ coordinate system for referencing saved marks directly and the ability to refer to marks earlier in the document than they are defined (the mechanism for remembering points uses the \Verb+aux+ file anyway so this was more about exposing the information earlier than anything complicated).
+% This is the version presented here.
+%
+% The \Verb+\tikzmark+ command can take an optional parameter which is some drawing command.
+% This drawing command can be used to place a node or something similar at the marked point.
+% Sometimes this can be useful.
+% Note, though, that if this is used to define an offset coordinate then this will only be available in the document \emph{after} the \Verb+\tikzmark+ command, even on later runs.
+%
+% \section{Examples and Extras}
+%
+% The \Verb+\tikzmark+ command has been used in numerous answers on \href{http://tex.stackexchange.com}{TeX-SX}.
+% The following is a random selection.
+%
+% \begin{enumerate}
+% \item
+% \end{enumerate}
+%
+% Some of these have been gathered into the \Verb+tikzmarkextras+ TikZ library.
+% 
+%
+% \section{Acknowledgements}
+%
+% The \Verb+\tikzmark+ macro has been used and abused by many users of \href{http://tex.stackexchange.com}{TeX-SX}.
+% Of particular note (but in no particular order) are \href{}{Peter Grill}, \href{}{Gonzalo Medina}, and \href{}{Claudio Fiandrino}.
+% 
+%
+% \StopEventually{}
+%
+% \section{Implementation}
+%
+% \iffalse
+%<*tikzlibrary>
+% \fi
+%
+%    \begin{macrocode}
+\tikzset{%
+  remember picture with id/.style={%
+    remember picture,
+    overlay,
+    save picture id=#1,
+  },
+%    \end{macrocode}
+% The positions are already recorded in the \Verb+aux+ file, all we really need to do is provide them with better names.
+%    \begin{macrocode}
+  save picture id/.code={%
+    \edef\pgf@temp{#1}%
+    \immediate\write\pgfutil@auxout{%
+      \noexpand\savepointas{\pgf@temp}{\pgfpictureid}}%
+  },
+%    \end{macrocode}
+% Provides a way to test if a picture has already been saved (in particular, can avoid errors on first runs)
+%    \begin{macrocode}
+  if picture id/.code args={#1#2#3}{%
+    \@ifundefined{save@pt@#1}{%
+      \pgfkeysalso{#3}%
+    }{
+      \pgfkeysalso{#2}%
+    }
+  }
+}
+%    \end{macrocode}
+%
+% \begin{macro}{\savepointas}
+% This is what gets written to the \Verb+aux+ file.
+%    \begin{macrocode}
+\def\savepointas#1#2{%
+  \expandafter\gdef\csname save@pt@#1\endcsname{#2}%
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\tmk@labeldef}
+% Auxiliary command for the coordinate system.
+%    \begin{macrocode}
+\def\tmk@labeldef#1,#2\@nil{%
+  \def\tmk@label{#1}%
+  \def\tmk@def{#2}%
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{pic}
+% This defines the new coordinate system.
+%    \begin{macrocode}
+\tikzdeclarecoordinatesystem{pic}{%
+  \pgfutil@in@,{#1}%
+  \ifpgfutil@in@%
+    \tmk@labeldef#1\@nil
+  \else
+    \tmk@labeldef#1,(0pt,0pt)\@nil
+  \fi
+  \@ifundefined{save@pt@\tmk@label}{%
+    \tikz@scan@one@point\pgfutil@firstofone\tmk@def
+  }{%
+  \pgfsys@getposition{\csname save@pt@\tmk@label\endcsname}\save@orig@pic%
+  \pgfsys@getposition{\pgfpictureid}\save@this@pic%
+  \pgf@process{\pgfpointorigin\save@this@pic}%
+  \pgf@xa=\pgf@x
+  \pgf@ya=\pgf@y
+  \pgf@process{\pgfpointorigin\save@orig@pic}%
+  \advance\pgf@x by -\pgf@xa
+  \advance\pgf@y by -\pgf@ya
+  }%
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\tikzmark}
+%    \begin{macrocode}
+\newcommand\tikzmark[2][]{%
+\tikz[remember picture with id=#2] #1;}
+%    \end{macrocode}
+% \end{macro}
+%
+% \iffalse
+%</tikzlibrary>
+% \fi
+%
+% \iffalse
+%<*extras>
+% \fi
+%
+%
+%
+% \iffalse
+%</extras>
+% \fi
+%
+% \Finale
+
+\endinput
