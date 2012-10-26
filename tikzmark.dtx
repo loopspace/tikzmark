@@ -320,9 +320,10 @@ and the derived files           tikzmark.ins,
 % The positions are already recorded in the \Verb+aux+ file, all we really need to do is provide them with better names.
 %    \begin{macrocode}
   save picture id/.code={%
-    \edef\pgf@temp{#1}%
-    \immediate\write\pgfutil@auxout{%
-      \noexpand\savepointas{\pgf@temp}{\pgfpictureid}}%
+    \edef\pgf@temp{%
+      \noexpand\write\noexpand\pgfutil@auxout{%
+        \string\savepointas{#1}{\pgfpictureid}{\noexpand\thepage}}}%
+    \pgf@temp
   },
 %    \end{macrocode}
 % Provides a way to test if a picture has already been saved (in particular, can avoid errors on first runs)
@@ -340,8 +341,9 @@ and the derived files           tikzmark.ins,
 % \begin{macro}{\savepointas}
 % This is what gets written to the \Verb+aux+ file.
 %    \begin{macrocode}
-\def\savepointas#1#2{%
+\def\savepointas#1#2#3{%
   \expandafter\gdef\csname save@pt@#1\endcsname{#2}%
+  \expandafter\gdef\csname save@pg@#1\endcsname{#3}%
 }
 %    \end{macrocode}
 % \end{macro}
