@@ -1,0 +1,28 @@
+\immediate\write18{tex tikzmark.dtx}
+\documentclass{article}
+\usepackage{tikz}
+\usetikzlibrary{tikzmark}
+
+\tikzset{
+  next page=below,
+}
+
+\usepackage{lipsum}
+
+\begin{document}
+
+\tikz[overlay,remember picture,ultra thick,red] \draw (pic cs:a) -- (pic cs:b);
+\tikz[overlay,remember picture,ultra thick,red] \draw (0,0) -- (pic cs:d);
+
+A\tikzmark{a} tikzmark \tikzmark{b}.
+
+\lipsum[1-4]
+\lipsum[4]
+\tikzmark{c}%
+\lipsum*[4]
+\tikzmark{d}%
+
+\lipsum[1]
+\tikz[overlay,remember picture,ultra thick,red] \draw (0,0) -- (pic cs:d);
+
+\end{document}
