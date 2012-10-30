@@ -316,6 +316,10 @@ and the derived files           tikzmark.ins,
     overlay,
     save picture id=#1,
   },
+%    \end{macrocode}
+% Not totally happy with using \Verb+every picture+ here as it's too easily overwritten by the user.
+% Maybe it would be better to patch \Verb+endtikzpicture+ directly.
+%    \begin{macrocode}
   every picture/.append style={%
     execute at end picture={%
       \ifpgfrememberpicturepositiononpage%
@@ -431,6 +435,34 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \newcommand\tikzmark[2][]{%
 \tikz[remember picture with id=#2] #1;}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\pgfmark}
+%    \begin{macrocode}
+\newcommand\pgfmark[1]{%
+    \global\advance\pgf@picture@serial@count by1\relax%
+    \edef\pgfpictureid{pgfid\the\pgf@picture@serial@count}%
+    \hbox to0pt{\pgfsys@markposition{\pgfpictureid}}%
+    \edef\pgf@temp{%
+      \noexpand\write\noexpand\pgfutil@auxout{%
+        \string\savepicturepage{\pgfpictureid}{\noexpand\thepage}}}%
+    \pgf@temp
+    \immediate\write\pgfutil@auxout{%
+      \string\savepointas{#1}{\pgfpictureid}}%
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\iftikzmark}
+%    \begin{macrocode}
+\newcommand\iftikzmark[3]{%
+    \@ifundefined{save@pt@#1}{%
+      #3%
+    }{%
+      #2%
+    }%
+  }%
 %    \end{macrocode}
 % \end{macro}
 %
