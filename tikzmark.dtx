@@ -443,7 +443,9 @@ and the derived files           tikzmark.ins,
 \newcommand\pgfmark[1]{%
     \global\advance\pgf@picture@serial@count by1\relax%
     \edef\pgfpictureid{pgfid\the\pgf@picture@serial@count}%
-    \hbox to0pt{\pgfsys@markposition{\pgfpictureid}}%
+%    \hbox to0pt{%
+      \pgfsys@markposition{\pgfpictureid}
+%    }%
     \edef\pgf@temp{%
       \noexpand\write\noexpand\pgfutil@auxout{%
         \string\savepicturepage{\pgfpictureid}{\noexpand\thepage}}}%
