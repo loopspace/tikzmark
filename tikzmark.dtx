@@ -52,7 +52,7 @@ This work consists of the file  tikzmark.dtx
 and the derived files           tikzmark.ins,
                                 tikzmark.pdf,
                                 tikzlibrarytikzmark.code.tex, and
-                                tikzlibrarytikzmarkextras.code.tex
+                                tikzmarklibrarylistings.code.tex
 
 \endpostamble
 \usedir{tex/latex/tikzmark}
@@ -60,7 +60,7 @@ and the derived files           tikzmark.ins,
   \file{tikzlibrarytikzmark.code.tex}{\from{\jobname.dtx}{tikzlibrary}}
 }
 \generate{
-  \file{tikzlibrarytikzmarkextras.code.tex}{\from{\jobname.dtx}{extras}}
+  \file{tikzmarklibrarylistings.code.tex}{\from{\jobname.dtx}{listings}}
 }
 %</install>
 %<install>\endbatchfile
@@ -90,7 +90,7 @@ and the derived files           tikzmark.ins,
 \usepackage{lmodern}
 %\usepackage{morefloats}
 \usepackage{tikz}
-\usetikzlibrary{tikzmark,tikzmarkextras}
+\usetikzlibrary{tikzmark}
 \usepackage[numbered]{hypdoc}
 \definecolor{lstbgcolor}{rgb}{0.9,0.9,0.9} 
  
@@ -274,14 +274,57 @@ and the derived files           tikzmark.ins,
 % A common use was in highlighting or adding marks to text.
 %
 % Gradually, as it got used, it developed.
-% The current version dates from an answer given in \href{http://tex.stackexchange.com/a/50054/86}{March 2012} where the question was actually about \Verb+\tikzmark+.
-% The new version added two important features: a TikZ coordinate system for referencing saved marks directly and the ability to refer to marks earlier in the document than they are defined (the mechanism for remembering points uses the \Verb+aux+ file anyway so this was more about exposing the information earlier than anything complicated).
-% This is the version presented here.
+% A major revision dates from an answer given in \href{http://tex.stackexchange.com/a/50054/86}{March 2012} where the question was actually about \Verb+\tikzmark+.
+% This version added two important features: a TikZ coordinate system for referencing saved marks directly and the ability to refer to marks earlier in the document than they are defined (the mechanism for remembering points uses the \Verb+aux+ file anyway so this was more about exposing the information earlier than anything complicated).
+% Then in October 2012 there was a  \href{http://tex.stackexchange.com/q/79121/86}{question} where it would have been useful to remember which page the mark was on and a \href{http://tex.stackexchange.com/q/79762/86}{question} where for some reason using the \Verb+\tikz+ macro didn't work so the \Verb+\pgfmark+ macro was introduced.
 %
-% The \Verb+\tikzmark+ command can take an optional parameter which is some drawing command.
-% This drawing command can be used to place a node or something similar at the marked point.
+% \section{Usage}
+%
+% This package defines the following commands and usable stuff.
+%
+% \begin{enumerate}
+% \item \Verb+\tikzmark+\oarg{drawing command}\marg{name}
+%
+% The mandatory argument is the name of the mark to be used to refer back to this point later.
+%
+% The \Verb+\tikzmark+ command can take an optional parameter which is some drawing command that can be put in a \Verb+\tikz ... ;+ command.
+% This drawing command can be used to place a node or something similar at the marked point, or to set some \Verb+\tikzset+ keys .
 % Sometimes this can be useful.
 % Note, though, that if this is used to define an offset coordinate then this will only be available in the document \emph{after} the \Verb+\tikzmark+ command, even on later runs.
+%
+% \item \Verb+\pgfmark+\marg{name}
+%
+% This is a more basic form of the \Verb+\tikzmark+ which doesn't use any of the \Verb+\tikz+ overhead.
+% One advantage of this command is that it doesn't create an \Verb+hbox+.
+% 
+% \item \Verb+\iftikzmark+\marg{name}\marg{true code}\marg{false code}
+%
+% This is a simple conditional to test if a particular mark is available.
+% It executes \Verb+true code+ if it is and \Verb+false code+ if not.
+%
+% \item \Verb+(pic cs:<name>)+ or \Verb+(pic cs:<name>,<coordinate>)+
+%
+% This is the method for referring to a position remembered by \Verb+\tikzmark+ as a coordinate in a \Verb+tikzpicture+ environment (or \Verb+\tikz+ command).
+% If the extra \Verb+coordinate+ is specified then this is used in case the mark \Verb+name+ has not yet been defined (this can be useful for defining code that does something sensible on the first run).
+%
+% \item \Verb+/tikz/save picture id=<name>+
+%
+% This is the TikZ key that is used by \Verb+\tikzmark+ to actually save the connection between the name and the picture coordinate.
+% It can be used on an arbitrary picture to save its origin.
+%
+% \item \Verb+/tikz/if picture id=#1#2#3+
+%
+% This is a key equivalent of the \Verb+\iftikzmark+ command.
+%
+% \item \Verb+/tikz/next page+, \Verb+/tikz/next page vector+
+%
+% It is possible to refer to a mark on a different page to the current page.
+% When this is done, the mark is offset by a vector stored in the key \Verb+/tikz/next page vector+.
+% The key \Verb+/tikz/next page+ can be used to set this to certain standard vectors by specifying where the ``next page'' is considered as lying corresponding to the current page.
+% Possible values are (by default) \Verb+above+, \Verb+below+, \Verb+left+, \Verb+right+, and \Verb+ignore+.
+% (The last one sets the vector to the zero vector.)
+%
+% \end{enumerate}
 %
 % \section{Examples and Extras}
 %
@@ -289,10 +332,10 @@ and the derived files           tikzmark.ins,
 % The following is a random selection.
 %
 % \begin{enumerate}
-% \item
+% \item 
 % \end{enumerate}
 %
-% Some of these have been gathered into the \Verb+tikzmarkextras+ TikZ library.
+% Some of these have been gathered into extra libraries that are loaded via \Verb+\usetikzmarklibrary+.
 % 
 %
 % \section{Acknowledgements}
@@ -468,18 +511,125 @@ and the derived files           tikzmark.ins,
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}{\usetikzmarkextra}
+%    \begin{macrocode}
+\def\usetikzmarkextra{\pgfutil@ifnextchar[{\use@tikzmarklibrary}{\use@@tikzmarklibrary}}%}
+\def\use@tikzmarklibrary[#1]{\use@@tikzmarklibrary{#1}}
+\def\use@@tikzmarklibrary#1{%
+  \edef\pgf@list{#1}%
+  \pgfutil@for\pgf@temp:=\pgf@list\do{%
+    \expandafter\pgfkeys@spdef\expandafter\pgf@temp\expandafter{\pgf@temp}%
+    \ifx\pgf@temp\pgfutil@empty
+    \else
+      \expandafter\ifx\csname tikzmark@library@\pgf@temp @loaded\endcsname\relax%
+      \expandafter\global\expandafter\let\csname tikzmark@library@\pgf@temp @loaded\endcsname=\pgfutil@empty%
+      \expandafter\edef\csname tikzmark@library@#1@atcode\endcsname{\the\catcode`\@}
+      \expandafter\edef\csname tikzmark@library@#1@barcode\endcsname{\the\catcode`\|}
+      \catcode`\@=11
+      \catcode`\|=12
+      \pgfutil@InputIfFileExists{tikzmarklibrary\pgf@temp.code.tex}{}{
+          \PackageError{tikzmark}{I did not find the tikzmark extras library '\pgf@temp'.}{}
+        }%
+      \catcode`\@=\csname tikzmark@library@#1@atcode\endcsname
+      \catcode`\|=\csname tikzmark@library@#1@barcode\endcsname
+      \fi%
+    \fi
+  }%
+}
+
+%    \end{macrocode}
+% \end{macro}
+%
 % \iffalse
 %</tikzlibrary>
 % \fi
 %
 % \iffalse
-%<*extras>
+%<*listings>
 % \fi
 %
+% From \url{http://tex.stackexchange.com/q/79762/86}
 %
+%    \begin{macrocode}
+\@ifpackageloaded{listings}{%
+%    \end{macrocode}
 %
+% \begin{macro}{\iflst@linemark}
+% A conditional to help with placing the mark at the first non-whitespace character.
+%    \begin{macrocode}
+    \newif\iflst@linemark
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{EveryLine}
+% This hook places the mark at the start of the line.
+%    \begin{macrocode}
+\lst@AddToHook{EveryLine}{%
+  \begingroup
+  \advance\c@lstnumber by 1\relax
+  \pgfmark{line-\lst@name-\the\c@lstnumber-start}%
+  \endgroup
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{EOL}
+% This hook places the mark at the end of the line and resets the conditional for placing the first mark.
+%    \begin{macrocode}
+\lst@AddToHook{EOL}{\pgfmark{line-\lst@name-\the\c@lstnumber-end}%
+\global\lst@linemarktrue
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{OutputBox}
+% Experimenting shows that this is the right place to set the mark at the first non-whitespace character.
+% But we only want to do this once per line.
+%    \begin{macrocode}
+\lst@AddToHook{OutputBox}{%
+  \iflst@linemark
+  \pgfmark{line-\lst@name-\the\c@lstnumber-first}%
+  \global\lst@linemarkfalse
+  \fi
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\tikzmk@lst@fnum}
+% An auxiliary macro to figure out if the \Verb+firstnumber+ key was set.
+% If so, it has the form \Verb+<number>\relax+.
+% If not, it expands to a single token.
+%    \begin{macrocode}
+\def\tkzmk@lst@fnum#1\relax#2\@STOP{%
+  \def\@test{#2}%
+  \ifx\@test\@empty
+  \def\tkzmk@lst@start{0}%
+  \else
+  \@tempcnta=#1\relax
+  \advance\@tempcnta by -1\relax
+  \def\tkzmk@lst@start{\the\@tempcnta}%
+  \fi
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{Init}
+% Adds a mark at the start of the listings environment.
+%    \begin{macrocode}
+\lst@AddToHook{Init}{%
+  \expandafter\tkzmk@lst@fnum\lst@firstnumber\relax\@STOP
+  \pgfmark{line-\lst@name-\tkzmk@lst@start-start}%
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macrocode}
+}{%
+    \PackageError{tikzmark listings}{The listings package has not been loaded.}{}
+}
+%    \end{macrocode}
 % \iffalse
-%</extras>
+%</listings>
 % \fi
 %
 % \Finale
