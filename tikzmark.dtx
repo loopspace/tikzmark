@@ -53,6 +53,7 @@ and the derived files           tikzmark.ins,
                                 tikzmark.pdf,
                                 tikzlibrarytikzmark.code.tex, and
                                 tikzmarklibrarylistings.code.tex
+                                tikzmarklibraryhighlight.code.tex
 
 \endpostamble
 \usedir{tex/latex/tikzmark}
@@ -61,6 +62,9 @@ and the derived files           tikzmark.ins,
 }
 \generate{
   \file{tikzmarklibrarylistings.code.tex}{\from{\jobname.dtx}{listings}}
+}
+\generate{
+  \file{tikzmarklibraryhighlight.code.tex}{\from{\jobname.dtx}{highlight}}
 }
 %</install>
 %<install>\endbatchfile
@@ -143,12 +147,12 @@ and the derived files           tikzmark.ins,
 %   Right brace   \}     Tilde         \~}
 %
 %
-% \changes{1.0}{2011/05/03}{Converted to DTX file}
+% \changes{1.0}{2012/11/08}{Converted to DTX file}
 %
 % \DoNotIndex{\newcommand,\newenvironment}
 %
 % \providecommand*{\url}{\texttt}
-% \GetFileInfo{tikzmark.dtx}
+% \GetFileInfo{\jobname}
 % \title{The \textsf{tikzmark} package}
 % \author{Andrew Stacey \\ \url{stacey@math.ntnu.no}}
 % \date{\fileversion~from \filedate}
@@ -288,7 +292,7 @@ and the derived files           tikzmark.ins,
 % The mandatory argument is the name of the mark to be used to refer back to this point later.
 %
 % The \Verb+\tikzmark+ command can take an optional parameter which is some drawing command that can be put in a \Verb+\tikz ... ;+ command.
-% This drawing command can be used to place a node or something similar at the marked point, or to set some \Verb+\tikzset+ keys .
+% This drawing command can be used to place a node or something similar at the marked point, or to set some \Verb+\tikzset+ keys.
 % Sometimes this can be useful.
 % Note, though, that if this is used to define an offset coordinate then this will only be available in the document \emph{after} the \Verb+\tikzmark+ command, even on later runs.
 %
@@ -324,24 +328,52 @@ and the derived files           tikzmark.ins,
 % Possible values are (by default) \Verb+above+, \Verb+below+, \Verb+left+, \Verb+right+, and \Verb+ignore+.
 % (The last one sets the vector to the zero vector.)
 %
+% \item \Verb+\subnode{name}{content}+
+%
+% This produces a pseudo-node named \Verb+name+ around the \Verb+content+.
+% The design purpose of this is to create a ``subnode'' inside a TikZ node.
+% As far as TikZ is concerned, the contents of a node is just a box.
+% It therefore does not know anything about it beyond its external size and so cannot easily determine the coordinates of pieces inside.
+% The \Verb+\subnode+ command boxes its contents and saves the position of that box and its dimensions.
+% This information is stored in the same way that PGF stores the necessary information about a node.
+% It is therefore possible to use ordinary node syntax (within a \Verb+tikzpicture+) to access this information.
+% Thus after \Verb+\node {a \subnode{a}{sub} node};+ it is possible to use \Verb+a+ as a node.
+%
+% There are two important points to make about this.
+% The first is that, as with all the \Verb+tikzmark+ macros, the information is always one compilation old.
+% The second is that the pseudo-node is a tight-fitting rectangular node.
+% To put a more normal node around it, use the \Verb+fit+ library.
+% Using the above example, \Verb+\node[fit=(a),draw] {};+ would draw a rectangle around the word \Verb+sub+ of exactly the same size as would appear had a normal node been created.
+%
 % \end{enumerate}
 %
 % \section{Examples and Extras}
 %
 % The \Verb+\tikzmark+ command has been used in numerous answers on \href{http://tex.stackexchange.com}{TeX-SX}.
-% The following is a random selection.
+% Some of these have been gathered into extra libraries that are loaded via \Verb+\usetikzmarklibrary+.
 %
 % \begin{enumerate}
-% \item 
+% \item \href{http://tex.stackexchange.com/q/79762/86}{Marking lines in listings}.
+% This places a mark at three places on a line of code in a \Verb+listings+ environment.
+% The marks are placed at the start of the line, the first non-whitespace character, and the end of the line (if the line is blank the latter two are not placed).
+% (This has not been extensively tested, it works by adding code to various ``hooks'' that are made available by the \Verb+listings+ package; it is quite possible that the hooks chosen are both wrong and insufficient to cover all desired cases.)
+%
+% \item \href{http://tex.stackexchange.com/q/46434/86}{Highlighting}.
+% There have been numerous questions on TeX-SX asking for the ability to highlight something.
+% Whilst \Verb+\tikzmark+ certainly can help with highlighting, in general it is somewhat tricky.
+% Doing it properly involves knowing about line heights and other information that is usually not known at the right time to do the highlighting.
+% The extra \Verb+\tikzmark+ library takes a more pragmatic approach.
+% It tries to do something reasonable and provide customisation for when it gets it wrong.
+% 
 % \end{enumerate}
 %
-% Some of these have been gathered into extra libraries that are loaded via \Verb+\usetikzmarklibrary+.
 % 
 %
 % \section{Acknowledgements}
 %
 % The \Verb+\tikzmark+ macro has been used and abused by many users of \href{http://tex.stackexchange.com}{TeX-SX}.
-% Of particular note (but in no particular order) are \href{}{Peter Grill}, \href{}{Gonzalo Medina}, and \href{}{Claudio Fiandrino}.
+% Of particular note (but in no particular order) are \href{}{Peter Grill}, \href{}{Gonzalo Medina}, \href{}{Claudio Fiandrino}, and \href{}{percusse}.
+% I would also like to mention David Carlisle whose knowledge of TikZ continues to astound us all.
 % 
 %
 % \StopEventually{}
@@ -484,17 +516,17 @@ and the derived files           tikzmark.ins,
 % \begin{macro}{\pgfmark}
 %    \begin{macrocode}
 \newcommand\pgfmark[1]{%
+    \bgroup
     \global\advance\pgf@picture@serial@count by1\relax%
     \edef\pgfpictureid{pgfid\the\pgf@picture@serial@count}%
-%    \hbox to0pt{%
-      \pgfsys@markposition{\pgfpictureid}
-%    }%
+      \pgfsys@markposition{\pgfpictureid}%
     \edef\pgf@temp{%
       \noexpand\write\noexpand\pgfutil@auxout{%
         \string\savepicturepage{\pgfpictureid}{\noexpand\thepage}}}%
     \pgf@temp
     \immediate\write\pgfutil@auxout{%
       \string\savepointas{#1}{\pgfpictureid}}%
+    \egroup
   }
 %    \end{macrocode}
 % \end{macro}
@@ -508,6 +540,22 @@ and the derived files           tikzmark.ins,
       #2%
     }%
   }%
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\subnode}
+%    \begin{macrocode}
+\newbox\tkmarkbox
+\newcommand{\subnode}[2]{%
+  \pgfmark{#1}%
+  \setbox\tkmarkbox=\hbox\bgroup #2\egroup
+  \expandafter\gdef\csname pgf@sh@ns@#1\endcsname{rectangle}%
+  \expandafter\xdef\csname pgf@sh@np@#1\endcsname{\def\noexpand\northeast{\noexpand\pgfqpoint{\the\wd\tkmarkbox}{\the\ht\tkmarkbox}}\def\noexpand\southwest{\noexpand\pgfqpoint{0pt}{\the\dp\tkmarkbox}}}%
+  \expandafter\gdef\csname pgf@sh@nt@#1\endcsname{{1.0}{0.0}{0.0}{1.0}{0.0pt}{0.0pt}}%
+  \expandafter\xdef\csname pgf@sh@pi@#1\endcsname{pgfid\the\pgf@picture@serial@count}%
+  \expandafter\gdef\csname pgf@sh@ma@#1\endcsname{}%
+\box\tkmarkbox
+  }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -543,6 +591,8 @@ and the derived files           tikzmark.ins,
 % \iffalse
 %</tikzlibrary>
 % \fi
+%
+% \section{Listings}
 %
 % \iffalse
 %<*listings>
@@ -631,6 +681,184 @@ and the derived files           tikzmark.ins,
 % \iffalse
 %</listings>
 % \fi
+%
+% \section{Highlighting}
+%
+% \iffalse
+%<*highlight>
+% \fi
+%
+% From \url{http://tex.stackexchange.com/q/46434/86}
+%
+% The user-level start and stop commands.
+%    \begin{macrocode}
+\newcounter{highlight}
+\newcommand{\hlstart}{\tikz[remember picture with id=hlstart\the\value{highlight},baseline=-0.7ex];\hl@start}
+\newcommand{\hlend}{\tikz[remember picture with id=hlend\the\value{highlight},baseline=-0.7ex];\hl@end\stepcounter{highlight}}
+\newcommand{\fdstart}{\tikz[remember picture with id=hlstart\the\value{highlight},baseline=-0.7ex];\fd@start}
+\newcommand{\fdend}{\tikz[remember picture with id=hlend\the\value{highlight},baseline=-0.7ex];\fd@end\stepcounter{highlight}}
+\newcommand{\vlstart}{\tikz[remember picture with id=hlstart\the\value{highlight},baseline=-1em];\vl@start}
+\newcommand{\vlend}{\tikz[remember picture with id=hlend\the\value{highlight},baseline=0.3ex];\vl@end\stepcounter{highlight}}
+%    \end{macrocode}
+%
+% This command draws the highlighter strokes
+%    \begin{macrocode}
+\newcommand{\hl@start}[1][]{%
+  \hl@draw{highlighter}{#1}{\the\value{highlight}}}
+
+\newcommand{\hl@end}{}
+
+\newcommand{\fd@start}[1][]{%
+  \def\fd@args{#1}}
+
+\newcommand{\fd@end}{\def\@tempa{\hl@draw{fader}}\expandafter\@tempa\expandafter{\fd@args}{\the\value{highlight}}\def\fd@args{}}
+
+\newcommand{\vl@start}[1][]{%
+  \vl@draw{highlighter}{#1}{\the\value{highlight}}}
+
+\newcommand{\vl@end}{}
+
+
+\def\hl@sets{%
+  \edef\hl@sx{\the\pgf@x}%
+  \edef\hl@sy{\the\pgf@y}%
+}
+\def\hl@sete{%
+  \edef\hl@ex{\the\pgf@x}%
+  \edef\hl@ey{\the\pgf@y}%
+}
+
+\@ifclassloaded{beamer}{
+
+\def\page@node{
+  \path (current page.south east)
+      ++(-\beamer@rightmargin,\footheight)
+  node[
+    minimum width=\textwidth,
+    minimum height=\textheight,
+    anchor=south east
+  ] (page) {};
+}
+
+}{
+
+  \def\page@node{
+    \path (current page.north west)
+    ++(\hoffset + 1in + \oddsidemargin + \leftskip,\voffset + 1in + \topmargin + \headheight + \headsep)
+    node[
+      minimum width=\textwidth - \leftskip - \rightskip,
+      minimum height=\textheight,
+      anchor=north west
+    ] (page) {};
+  }
+
+}
+
+\newcommand{\hl@draw}[3]{%
+  \begin{tikzpicture}[remember picture,overlay]%
+  \page@node
+  \tikzset{#2,highlight=#1,every path/.append style={highlight=#1}}%
+  \pgfmathsetlengthmacro{\hl@width}{\the\pgflinewidth - 1pt}%
+  \coordinate (hlstart) at (pic cs:hlstart#3);
+  \coordinate (hlend) at (pic cs:hlend#3);
+  \tikz@scan@one@point\hl@sets(pic cs:hlstart#3)
+  \tikz@scan@one@point\hl@sete(pic cs:hlend#3)
+  \ifdim\hl@sy=\hl@ey\relax
+  \draw (hlstart) -- (hlend);
+  \else
+  \draw (hlstart) -- (hlstart -| page.east);
+  \pgfmathsetlengthmacro{\hl@sy}{\hl@sy -\hl@width}%
+  \pgfmathsetlengthmacro{\hl@ey}{\hl@ey +\hl@width}%
+  \loop\ifdim\hl@sy>\hl@ey\relax
+  \draw (0,\hl@sy -| page.west) -- (0,\hl@sy -| page.east);
+  \pgfmathsetlengthmacro{\hl@sy}{\hl@sy -\hl@width}%
+  \repeat
+  \draw (hlend -| page.west) -- (hlend);
+  \fi
+  \end{tikzpicture}%
+}
+
+\newcommand{\vl@draw}[3]{%
+  \begin{tikzpicture}[remember picture,overlay]%
+  \page@node
+  \tikzset{#2,highlight=#1,every path/.append style={highlight=#1}}%
+  \pgfmathsetlengthmacro{\hl@width}{\the\pgflinewidth - 1pt}%
+  \coordinate (hlstart) at (pic cs:hlstart#3);
+  \coordinate (hlend) at (pic cs:hlend#3);
+  \tikz@scan@one@point\hl@sets(pic cs:hlstart#3)
+  \tikz@scan@one@point\hl@sete(pic cs:hlend#3)
+  \ifdim\hl@sx=\hl@ex\relax
+  \draw (hlstart) -- (hlend);
+  \else
+  \draw (hlstart) -- (hlstart |- page.south);
+  \pgfmathsetlengthmacro{\hl@sx}{\hl@sx -\hl@width}%
+  \pgfmathsetlengthmacro{\hl@ex}{\hl@ex +\hl@width}%
+  \loop\ifdim\hl@sx>\hl@ex\relax
+  \draw (\hl@sx,0 |- page.north) -- (\hl@sx,0 |- page.south);
+  \pgfmathsetlengthmacro{\hl@sx}{\hl@sx -\hl@width}%
+  \repeat
+  \draw (hlend |- page.north) -- (hlend);
+  \fi
+  \end{tikzpicture}%
+}
+
+\tikzset{%
+  highlight/.default=highlighter,
+  highlight/.style={
+    color=\pgfkeysvalueof{/tikz/#1 colour},
+    line width=\pgfkeysvalueof{/tikz/#1 width},
+    line cap=\pgfkeysvalueof{/tikz/#1 cap},
+    opacity=\pgfkeysvalueof{/tikz/#1 opacity},
+  },
+  highlighter colour/.initial=yellow,
+  highlighter width/.initial=12pt,
+  highlighter cap/.initial=butt,
+  highlighter opacity/.initial=1,
+  fader colour/.initial=gray,
+  fader width/.initial=12pt,
+  fader cap/.initial=butt,
+  fader opacity/.initial=.5,
+}
+
+
+
+\@ifclassloaded{beamer}{
+
+%% Beamer variants
+
+\setbeamercolor{highlighted text}{bg=yellow}
+\setbeamercolor{faded text}{fg=gray}
+
+\newcommand<>{\highlight}[2][]{%
+  \only#3{\hlstart[#1]}#2\only#3{\hlend}}
+
+\newcommand<>{\fade}[2][]{%
+  \only#3{\fdstart[#1]}#2\only#3{\fdend}}
+
+\newcommand<>{\vhighlight}[2][]{%
+  \only#3{\vlstart[#1]}#2\only#3{\vlend}}
+
+}{
+
+\newcommand{\highlight}[2][]{%
+\hlstart[#1]#2\hlend}
+
+\newcommand{\fade}[2][]{%
+\fdstart[#1]#2\fdend}
+
+\newcommand{\vhighlight}[2][]{%
+\vlstart[#1]#2\vlend}
+
+}
+%    \end{macrocode}
+%
+%
+%
+%
+% \iffalse
+%</highlight>
+% \fi
+%
 %
 % \Finale
 
