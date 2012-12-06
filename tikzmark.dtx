@@ -693,138 +693,191 @@ and the derived files           tikzmark.ins,
 % The user-level start and stop commands.
 %    \begin{macrocode}
 \newcounter{highlight}
-\newcommand{\hlstart}{\tikz[remember picture with id=hlstart\the\value{highlight},baseline=-0.7ex];\hl@start}
-\newcommand{\hlend}{\tikz[remember picture with id=hlend\the\value{highlight},baseline=-0.7ex];\hl@end\stepcounter{highlight}}
-\newcommand{\fdstart}{\tikz[remember picture with id=hlstart\the\value{highlight},baseline=-0.7ex];\fd@start}
-\newcommand{\fdend}{\tikz[remember picture with id=hlend\the\value{highlight},baseline=-0.7ex];\fd@end\stepcounter{highlight}}
-\newcommand{\vlstart}{\tikz[remember picture with id=hlstart\the\value{highlight},baseline=-1em];\vl@start}
-\newcommand{\vlend}{\tikz[remember picture with id=hlend\the\value{highlight},baseline=0.3ex];\vl@end\stepcounter{highlight}}
+\newcommand{\hlstart}[1][]{%
+  \hl@draw{#1}{highlighter}{0,0}{pic cs:hl-\the\value{highlight}}}
+
+\newcommand{\hlend}{%
+  \tikzmark{hl-\the\value{highlight}}\stepcounter{highlight}}
+
+\newcommand{\fdstart}[1][]{%
+    \def\fd@args{#1}%
+    \tikzmark{hl-\the\value{highlight}}}
+
+\newcommand{\fdend}{%
+    \expandafter\hl@draw\expandafter{\fd@args}{fader}%
+{pic cs:hl-\the\value{highlight}}{0,0}%
+    \stepcounter{highlight}\def\fd@args{}}
+
+\newcommand{\vlstart}[1][]{%
+  \vl@draw{#1}{highlighter}{0,0}{pic cs:hl-\the\value{highlight}}}
+
+\newcommand{\vlend}{%
+  \tikzmark{hl-\the\value{highlight}}\stepcounter{highlight}}
+
+\newcommand{\hlboxstart}[1][]{%
+  \box@draw{#1}{highlighter}{0,0}{pic cs:hl-\the\value{highlight}}}
+
+\newcommand{\hlboxend}{%
+  \tikzmark{hl-\the\value{highlight}}\stepcounter{highlight}}
 %    \end{macrocode}
 %
-% This command draws the highlighter strokes
+% The command that draws the horizontal highligher or fader.
+% This fills a shape determined by two coordinates assumed to be (in effect) on the baseline of the start and end of the region to be highlighted.
 %    \begin{macrocode}
-\newcommand{\hl@start}[1][]{%
-  \hl@draw{highlighter}{#1}{\the\value{highlight}}}
-
-\newcommand{\hl@end}{}
-
-\newcommand{\fd@start}[1][]{%
-  \def\fd@args{#1}}
-
-\newcommand{\fd@end}{\def\@tempa{\hl@draw{fader}}\expandafter\@tempa\expandafter{\fd@args}{\the\value{highlight}}\def\fd@args{}}
-
-\newcommand{\vl@start}[1][]{%
-  \vl@draw{highlighter}{#1}{\the\value{highlight}}}
-
-\newcommand{\vl@end}{}
-
-
-\def\hl@sets{%
-  \edef\hl@sx{\the\pgf@x}%
-  \edef\hl@sy{\the\pgf@y}%
-}
-\def\hl@sete{%
-  \edef\hl@ex{\the\pgf@x}%
-  \edef\hl@ey{\the\pgf@y}%
-}
-
-\@ifclassloaded{beamer}{
-
-\def\page@node{
-  \path (current page.south east)
-      ++(-\beamer@rightmargin,\footheight)
-  node[
-    minimum width=\textwidth,
-    minimum height=\textheight,
-    anchor=south east
-  ] (page) {};
-}
-
-}{
-
-  \def\page@node{
-    \path (current page.north west)
-    ++(\hoffset + 1in + \oddsidemargin + \leftskip,\voffset + 1in + \topmargin + \headheight + \headsep)
-    node[
-      minimum width=\textwidth - \leftskip - \rightskip,
-      minimum height=\textheight,
-      anchor=north west
-    ] (page) {};
-  }
-
-}
-
-\newcommand{\hl@draw}[3]{%
-  \begin{tikzpicture}[remember picture,overlay]%
-  \page@node
-  \tikzset{#2,highlight=#1,every path/.append style={highlight=#1}}%
-  \pgfmathsetlengthmacro{\hl@width}{\the\pgflinewidth - 1pt}%
-  \coordinate (hlstart) at (pic cs:hlstart#3);
-  \coordinate (hlend) at (pic cs:hlend#3);
-  \tikz@scan@one@point\hl@sets(pic cs:hlstart#3)
-  \tikz@scan@one@point\hl@sete(pic cs:hlend#3)
-  \ifdim\hl@sy=\hl@ey\relax
-  \draw (hlstart) -- (hlend);
-  \else
-  \draw (hlstart) -- (hlstart -| page.east);
-  \pgfmathsetlengthmacro{\hl@sy}{\hl@sy -\hl@width}%
-  \pgfmathsetlengthmacro{\hl@ey}{\hl@ey +\hl@width}%
-  \loop\ifdim\hl@sy>\hl@ey\relax
-  \draw (0,\hl@sy -| page.west) -- (0,\hl@sy -| page.east);
-  \pgfmathsetlengthmacro{\hl@sy}{\hl@sy -\hl@width}%
-  \repeat
-  \draw (hlend -| page.west) -- (hlend);
-  \fi
-  \end{tikzpicture}%
-}
-
-\newcommand{\vl@draw}[3]{%
-  \begin{tikzpicture}[remember picture,overlay]%
-  \page@node
-  \tikzset{#2,highlight=#1,every path/.append style={highlight=#1}}%
-  \pgfmathsetlengthmacro{\hl@width}{\the\pgflinewidth - 1pt}%
-  \coordinate (hlstart) at (pic cs:hlstart#3);
-  \coordinate (hlend) at (pic cs:hlend#3);
-  \tikz@scan@one@point\hl@sets(pic cs:hlstart#3)
-  \tikz@scan@one@point\hl@sete(pic cs:hlend#3)
-  \ifdim\hl@sx=\hl@ex\relax
-  \draw (hlstart) -- (hlend);
-  \else
-  \draw (hlstart) -- (hlstart |- page.south);
-  \pgfmathsetlengthmacro{\hl@sx}{\hl@sx -\hl@width}%
-  \pgfmathsetlengthmacro{\hl@ex}{\hl@ex +\hl@width}%
-  \loop\ifdim\hl@sx>\hl@ex\relax
-  \draw (\hl@sx,0 |- page.north) -- (\hl@sx,0 |- page.south);
-  \pgfmathsetlengthmacro{\hl@sx}{\hl@sx -\hl@width}%
-  \repeat
-  \draw (hlend |- page.north) -- (hlend);
-  \fi
-  \end{tikzpicture}%
-}
-
+\def\hl@draw#1#2#3#4{%
+    \begin{tikzpicture}[
+      remember picture,
+      overlay,
+      baseline=0pt,
+      #1,
+      highlight=#2,
+      every path/.append style={
+        highlight=#2
+      }
+    ]%
+    \tikz@scan@one@point\pgfutil@firstofone(#3)\relax
+    \pgf@ya=\pgf@y
+    \tikz@scan@one@point\pgfutil@firstofone(#4)\relax
+    \pgf@yb=\pgf@y
+    \ifdim\pgf@ya=\pgf@yb
+    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},\pgfkeysvalueof{/tikz/highlighter/line height}) coordinate (start);
+    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final extent},\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
+    \fill (start) rectangle (end);
+    \else
+    \page@node
+    \path (page.east) ++(\pgfkeysvalueof{/tikz/highlighter/right margin extent},0) coordinate (east);
+    \path (page.west) ++(\pgfkeysvalueof{/tikz/highlighter/left margin extent},0) coordinate (west);
+    \advance\pgf@yb by \pgfkeysvalueof{/tikz/highlighter/line height}\relax
+    \ifdim\pgf@yb>\pgf@ya
+    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},0) coordinate (start);
+    \path (#3) ++(0,\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
+    \coordinate (br) (end -| east);
+    \fill (start) rectangle (br);
+    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},0) coordinate (start);
+    \path (#4) ++(0,\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
+    \coordinate (bl) (end -| west);
+    \fill (start) rectangle (br);
+    \else
+    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},0) coordinate (start);
+    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final extent},\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
+    \path (start) ++ (0,\pgfkeysvalueof{/tikz/highlighter/line height}) coordinate (tl);
+    \coordinate (tr) at (tl -| east);
+    \coordinate (ml) at (start -| west);
+    \coordinate (bl) at (end -| west);
+    \path (end) ++(0,\pgfkeysvalueof{/tikz/highlighter/line height}) coordinate (mr);
+    \coordinate (br) at (mr -| east);
+    \fill (start) -- (tl) -- (tr) -- (br) -- (mr) -- (end) -- (bl) -- (ml) -- cycle;
+    \fi
+    \fi
+    \end{tikzpicture}}
+%    \end{macrocode}
+%
+% This one draws a box.
+%    \begin{macrocode}
+\def\box@draw#1#2#3#4{%
+    \begin{tikzpicture}[
+      remember picture,
+      overlay,
+      baseline=0pt,
+      #1,
+      highlight=#2,
+      every path/.append style={
+        highlight=#2
+      }
+    ]%
+   \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},\pgfkeysvalueof{/tikz/highlighter/line height}) coordinate (start);
+    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final extent},\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
+    \fill (start) rectangle (end);
+    \end{tikzpicture}}
+%    \end{macrocode}
+%
+% In this one the region is defined vertically.
+%    \begin{macrocode}
+\def\vl@draw#1#2#3#4{%
+    \begin{tikzpicture}[
+      remember picture,
+      overlay,
+      baseline=0pt,
+      #1,
+      highlight=#2,
+      every path/.append style={
+        highlight=#2
+      }
+    ]%
+    \tikz@scan@one@point\pgfutil@firstofone(#3)\relax
+    \pgf@xa=\pgf@x
+    \tikz@scan@one@point\pgfutil@firstofone(#4)\relax
+    \pgf@xb=\pgf@x
+    \ifdim\pgf@xa=\pgf@xb
+    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},\pgfkeysvalueof{/tikz/highlighter/line height}) coordinate (start);
+    \path (#4) ++(0,\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
+    \fill (start) rectangle (end);
+    \else
+    \page@node
+    \path (page.north) ++(\pgfkeysvalueof{/tikz/highlighter/top margin extent},0) coordinate (north);
+    \path (page.south) ++(\pgfkeysvalueof{/tikz/highlighter/bottom margin extent},0) coordinate (south);
+    \advance\pgf@xa by \pgfkeysvalueof{/tikz/highlighter/line height}\relax
+    \ifdim\pgf@xb<\pgf@xa
+    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},0) coordinate (start);
+    \path (#3) ++(0,\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
+    \coordinate (br) (end |- south);
+    \fill (start) rectangle (br);
+    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},0) coordinate (start);
+    \path (#4) ++(0,\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
+    \coordinate (bl) (end |- north);
+    \fill (start) rectangle (br);
+    \else
+    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},\pgfkeysvalueof{/tikz/highlighter/line height}) coordinate (start);
+    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final extent},\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
+    \path (start) ++ (\pgfkeysvalueof{/tikz/highlighter/line height},0) coordinate (tl);
+    \coordinate (tr) at (tl |- north);
+    \coordinate (ml) at (start |- south);
+    \coordinate (bl) at (end |- north);
+    \path (end) ++(-\pgfkeysvalueof{/tikz/highlighter/line height},0) coordinate (mr);
+    \coordinate (br) at (mr |- south);
+    \fill (start) -- (tl) -- (tr) -- (bl) -- (end) -- (mr) -- (br) -- (ml) -- cycle;
+    \fi
+    \fi
+    \end{tikzpicture}}
+%    \end{macrocode}
+%
+% These set various options.
+%    \begin{macrocode}
 \tikzset{%
   highlight/.default=highlighter,
   highlight/.style={
-    color=\pgfkeysvalueof{/tikz/#1 colour},
-    line width=\pgfkeysvalueof{/tikz/#1 width},
-    line cap=\pgfkeysvalueof{/tikz/#1 cap},
-    opacity=\pgfkeysvalueof{/tikz/#1 opacity},
+    every #1/.try,
+    color=\pgfkeysvalueof{/tikz/#1/colour},
+    line width=\pgfkeysvalueof{/tikz/#1/width},
+    line cap=\pgfkeysvalueof{/tikz/#1/cap},
+    opacity=\pgfkeysvalueof{/tikz/#1/opacity},
   },
-  highlighter colour/.initial=yellow,
-  highlighter width/.initial=12pt,
-  highlighter cap/.initial=butt,
-  highlighter opacity/.initial=1,
-  fader colour/.initial=gray,
-  fader width/.initial=12pt,
-  fader cap/.initial=butt,
-  fader opacity/.initial=.5,
+  /tikz/highlighter/.is family,
+  /tikz/highlighter/.cd,
+  colour/.initial=yellow,
+  width/.initial=12pt,
+  cap/.initial=butt,
+  opacity/.initial=1,
+  line height/.initial=\baselineskip,
+  initial indent/.initial=-.5\baselineskip,
+  final descent/.initial=-.5ex,
+  final extent/.initial=.5\baselineskip,
+  left margin extent/.initial=-.5\baselineskip,
+  right margin extent/.initial=.5\baselineskip,
+  top margin extent/.initial=.5\baselineskip,
+  bottom margin extent/.initial=-.5\baselineskip,
+  /tikz/fader/.is family,
+  /tikz/fader/.cd,
+  colour/.initial=gray,
+  width/.initial=12pt,
+  cap/.initial=butt,
+  opacity/.initial=.5,
 }
-
-
-
+%    \end{macrocode}
+%
+% Some beamer specifics.
+%    \begin{macrocode}
 \@ifclassloaded{beamer}{
-
-%% Beamer variants
 
 \setbeamercolor{highlighted text}{bg=yellow}
 \setbeamercolor{faded text}{fg=gray}
@@ -838,7 +891,30 @@ and the derived files           tikzmark.ins,
 \newcommand<>{\vhighlight}[2][]{%
   \only#3{\vlstart[#1]}#2\only#3{\vlend}}
 
+\def\page@node{
+  \path (current page.south east)
+      ++(-\beamer@rightmargin,\footheight)
+  node[
+    minimum width=\textwidth,
+    minimum height=\textheight,
+    anchor=south east
+  ] (page) {};
+}
+
 }{
+%    \end{macrocode}
+% The non-beamer variants
+%    \begin{macrocode}
+  \def\page@node{
+    \path (current page.north west)
+    ++(\hoffset + 1in + \oddsidemargin + \leftskip,-\voffset - 1in - \topmargin - \headheight - \headsep)
+    node[
+      minimum width=\textwidth - \leftskip - \rightskip,
+      minimum height=\textheight,
+      anchor=north west,
+      line width=0mm,
+    ] (page) {};
+  }
 
 \newcommand{\highlight}[2][]{%
 \hlstart[#1]#2\hlend}

@@ -2,15 +2,44 @@
 \documentclass{article}
 \usepackage{tikz}
 \usetikzlibrary{tikzmark}
+\usetikzmarkextra{highlight}
 
 \tikzset{
   next page=below,
+  highlighter/right margin extent=2mm,
+  highlighter/left margin extent=-2mm,
+  fader/colour=gray,
+  fader/opacity=.8,
+%  every highlighter/.style={rounded corners},
 }
 
 \usepackage{lipsum}
 
 \begin{document}
-\tikz[overlay,remember picture,ultra thick,red] \draw (pic cs:a) -- (pic cs:b);
+
+\lipsum[6]
+
+\vlstart\lipsum*[5]\vlend
+
+\lipsum[7]
+
+\newpage
+
+\hlboxstart\lipsum*[4]\hlboxend
+
+\hlstart\lipsum*[1]\hlend
+
+\hlstart\lipsum*[2]\hlend
+
+\fdstart\lipsum*[3]\fdend
+
+\hlstart A not so long sentence\hlend
+
+A rather longer \hlstart sentence that goes over one line and onto the next but not all that much further\hlend\ than that.
+
+A rather longer sentence that goes over one line and onto the next but not all that much further than that.
+
+\tikz[overlay,remember picture,ultra thick,red] \draw (pic cs:a) -- (pic cs:b);%
 A\tikzmark{a} tikzmark
 
 \lipsum[1-4]
@@ -49,3 +78,7 @@ A\tikzmark{a} tikzmark \tikzmark{b}.
 \tikz[overlay,remember picture,ultra thick,red] \draw (0,0) -- (pic cs:d);
 
 \end{document}
+
+% Local Variables:
+% tex-output-type: "pdf18"
+% End:%   
