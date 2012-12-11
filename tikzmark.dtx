@@ -196,12 +196,13 @@ and the derived files           tikzmark.ins,
 %
 % This is because of how TikZ coordinates work.
 % The coordinates inside a TikZ picture are relative to its origin, so that origin can move around on the page and not affect the internals of the picture.
-% To use a point outside the picture, therefore, the current picture not only has to know where that point is on the page it also has to know where it is on the page.
+% To use a point outside the picture, therefore, the current picture not only has to know where that point is on the page it also has to know where it itself is on the page.
 % Hence the \Verb+remember picture+ key must be set.
 % \item The drawing command must have the \Verb+overlay+ key set (or be in a scope or picture where it is set).
 % 
 % This is to keep the bounding box of the current picture under control.
 % Otherwise, it would grow to encompass the remembered point as well as the current picture.
+% (This isn't necessary if the remembered point is inside the current picture.)
 % \end{enumerate}
 %
 % 
@@ -215,7 +216,7 @@ and the derived files           tikzmark.ins,
 % \newcommand{\tikzmark}[1]{\tikz[overlay,remember picture] \node (#1) {};}
 % \end{lstlisting}
 %
-% Its first use was thus the (inelegant) code:
+% Its first use was in the (inelegant) code:
 %
 % \begin{lstlisting}
 % \begin{frame}
@@ -308,7 +309,7 @@ and the derived files           tikzmark.ins,
 %
 % \item \Verb+(pic cs:<name>)+ or \Verb+(pic cs:<name>,<coordinate>)+
 %
-% This is the method for referring to a position remembered by \Verb+\tikzmark+ as a coordinate in a \Verb+tikzpicture+ environment (or \Verb+\tikz+ command).
+% This is the method for referring to a position remembered by \Verb+\tikzmark+ (or \Verb+\pgfmark+) as a coordinate in a \Verb+tikzpicture+ environment (or \Verb+\tikz+ command).
 % If the extra \Verb+coordinate+ is specified then this is used in case the mark \Verb+name+ has not yet been defined (this can be useful for defining code that does something sensible on the first run).
 %
 % \item \Verb+/tikz/save picture id=<name>+
@@ -328,7 +329,7 @@ and the derived files           tikzmark.ins,
 % Possible values are (by default) \Verb+above+, \Verb+below+, \Verb+left+, \Verb+right+, and \Verb+ignore+.
 % (The last one sets the vector to the zero vector.)
 %
-% \item \Verb+\subnode{name}{content}+
+% \item \Verb+\subnode[options]{name}{content}+
 %
 % This produces a pseudo-node named \Verb+name+ around the \Verb+content+.
 % The design purpose of this is to create a ``subnode'' inside a TikZ node.
@@ -338,12 +339,16 @@ and the derived files           tikzmark.ins,
 % This information is stored in the same way that PGF stores the necessary information about a node.
 % It is therefore possible to use ordinary node syntax (within a \Verb+tikzpicture+) to access this information.
 % Thus after \Verb+\node {a \subnode{a}{sub} node};+ it is possible to use \Verb+a+ as a node.
+% The \Verb+options+ are passed to the node construction mechanism, but note that the only sensible options are those that affect the size and shape of the node: drawing options are ignored (except in so far as they affect the size -- as an example, \Verb+line width+ affects the node size).
 %
 % There are two important points to make about this.
 % The first is that, as with all the \Verb+tikzmark+ macros, the information is always one compilation old.
-% The second is that the pseudo-node is a tight-fitting rectangular node.
-% To put a more normal node around it, use the \Verb+fit+ library.
-% Using the above example, \Verb+\node[fit=(a),draw] {};+ would draw a rectangle around the word \Verb+sub+ of exactly the same size as would appear had a normal node been created.
+% The second is that the pseudo-node is purely about coordinates: the  path information is not used and the contents are not moved.
+% This is partly for reasons of implementation: the pseudo-node is constructed when TikZ is not in ``picture mode''.
+% But also interleaving the background path of the pseudo-node and any containing node would be problematic and so is best left to the user.
+%
+% The simplest way to turn a pseudo-node into a more normal node is to use the \Verb+fit+ library.
+% Using the above example, \Verb+\node[fit=(a),draw,inner sep=0pt] {};+ would draw a rectangle around the word \Verb+sub+ of exactly the same size as would appear had a normal node been created.
 %
 % \end{enumerate}
 %
@@ -545,23 +550,64 @@ and the derived files           tikzmark.ins,
 %
 % \begin{macro}{\subnode}
 %    \begin{macrocode}
-\newbox\tkmarkbox
-\newcommand{\subnode}[2]{%
-  \pgfmark{#1}%
-  \setbox\tkmarkbox=\hbox\bgroup #2\egroup
-  \expandafter\gdef\csname pgf@sh@ns@#1\endcsname{rectangle}%
-  \expandafter\xdef\csname pgf@sh@np@#1\endcsname{\def\noexpand\northeast{\noexpand\pgfqpoint{\the\wd\tkmarkbox}{\the\ht\tkmarkbox}}\def\noexpand\southwest{\noexpand\pgfqpoint{0pt}{\the\dp\tkmarkbox}}}%
-  \expandafter\gdef\csname pgf@sh@nt@#1\endcsname{{1.0}{0.0}{0.0}{1.0}{0.0pt}{0.0pt}}%
-  \expandafter\xdef\csname pgf@sh@pi@#1\endcsname{pgfid\the\pgf@picture@serial@count}%
-  \expandafter\gdef\csname pgf@sh@ma@#1\endcsname{}%
-\box\tkmarkbox
-  }
+\newcommand\subnode[3][]{%
+  \begingroup
+  \pgfmark{#2}%
+  \setbox\pgfnodeparttextbox=\hbox\bgroup #3\egroup
+  \def\tikz@shape{rectangle}%
+  \def\tikz@anchor{center}%
+  \def\tikz@fig@name{#2}%
+  \tikzset{every subnode/.try,#1}%
+  \pgfpointorigin
+  \tikz@scan@one@point\pgfutil@firstofone(pic cs:#2)\relax
+  \advance\pgf@x by .5\wd\pgfnodeparttextbox
+  \advance\pgf@y by .5\ht\pgfnodeparttextbox
+  \advance\pgf@y by -.5\dp\pgfnodeparttextbox
+  \pgftransformshift{}%
+  \setbox\@tempboxa=\hbox\bgroup
+  \pgfutil@ifundefined{pgf@sh@s@\tikz@shape}%
+  {\PackageError{pgf}{Unknown shape ``\tikz@shape''}{}}%
+  {%
+    {%
+      \let\pgf@sh@savedmacros=\pgfutil@empty% MW
+      \let\pgf@sh@savedpoints=\pgfutil@empty%
+      \def\pgf@sm@shape@name{\tikz@shape}% CJ % TT added prefix!
+      \csname pgf@sh@s@\tikz@shape\endcsname%
+      \pgf@sh@savedpoints%
+      \pgf@sh@savedmacros% MW
+      \pgftransformshift{%
+        \pgf@sh@reanchor{\tikz@shape}{\tikz@anchor}%
+        \pgf@x=-\pgf@x%
+        \pgf@y=-\pgf@y%
+      }%
+      \expandafter\pgfsavepgf@process\csname pgf@sh@sa@\tikz@fig@name\endcsname{%
+      	\pgf@sh@reanchor{\tikz@shape}{\tikz@anchor}% FIXME : this is double work!
+      }%
+      % Save the saved points and the transformation matrix
+      \edef\pgf@node@name{\tikz@fig@name}%
+      \ifx\pgf@node@name\pgfutil@empty%
+      \else%
+        \expandafter\xdef\csname pgf@sh@ns@\pgf@node@name\endcsname{\tikz@shape}%
+        \edef\pgf@sh@@temp{\noexpand\gdef\expandafter\noexpand\csname pgf@sh@np@\pgf@node@name\endcsname}%
+        \expandafter\pgf@sh@@temp\expandafter{\pgf@sh@savedpoints}%
+        \edef\pgf@sh@@temp{\noexpand\gdef\expandafter\noexpand\csname pgf@sh@ma@\pgf@node@name\endcsname}% MW
+        \expandafter\pgf@sh@@temp\expandafter{\pgf@sh@savedmacros}% MW
+        \pgfgettransform\pgf@temp
+        \expandafter\xdef\csname pgf@sh@nt@\pgf@node@name\endcsname{\pgf@temp}%
+        \expandafter\xdef\csname pgf@sh@pi@\pgf@node@name\endcsname{\pgfpictureid}%
+      \fi%
+    }%
+  }%
+  \egroup
+  \box\pgfnodeparttextbox
+  \endgroup
+}
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{\usetikzmarkextra}
 %    \begin{macrocode}
-\def\usetikzmarkextra{\pgfutil@ifnextchar[{\use@tikzmarklibrary}{\use@@tikzmarklibrary}}%}
+\def\usetikzmarklibrary{\pgfutil@ifnextchar[{\use@tikzmarklibrary}{\use@@tikzmarklibrary}}%}
 \def\use@tikzmarklibrary[#1]{\use@@tikzmarklibrary{#1}}
 \def\use@@tikzmarklibrary#1{%
   \edef\pgf@list{#1}%
@@ -729,7 +775,9 @@ and the derived files           tikzmark.ins,
       remember picture,
       overlay,
       baseline=0pt,
+      /tikz/highlighter/.cd,
       #1,
+      /tikz/.cd,
       highlight=#2,
       every path/.append style={
         highlight=#2
@@ -740,33 +788,30 @@ and the derived files           tikzmark.ins,
     \tikz@scan@one@point\pgfutil@firstofone(#4)\relax
     \pgf@yb=\pgf@y
     \ifdim\pgf@ya=\pgf@yb
-    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},\pgfkeysvalueof{/tikz/highlighter/line height}) coordinate (start);
-    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final extent},\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
+    \path (#3) ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},\pgfkeysvalueof{/tikz/highlighter/initial height}) coordinate (start);
+    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final offset},-1*\pgfkeysvalueof{/tikz/highlighter/final depth}) coordinate (end);
     \fill (start) rectangle (end);
     \else
     \page@node
-    \path (page.east) ++(\pgfkeysvalueof{/tikz/highlighter/right margin extent},0) coordinate (east);
-    \path (page.west) ++(\pgfkeysvalueof{/tikz/highlighter/left margin extent},0) coordinate (west);
-    \advance\pgf@yb by \pgfkeysvalueof{/tikz/highlighter/line height}\relax
+    \path (page.east) ++(\pgfkeysvalueof{/tikz/highlighter/right margin},0pt) coordinate (east);
+    \path (page.west) ++(-1*\pgfkeysvalueof{/tikz/highlighter/left margin},0pt) coordinate (west);
+  \pgfmathsetlength\pgf@x{\pgfkeysvalueof{/tikz/highlighter/initial height}}%
+    \advance\pgf@yb by \pgf@x\relax
+  \pgfmathsetlength\pgf@x{-1*\pgfkeysvalueof{/tikz/highlighter/final depth}}%
+    \advance\pgf@ya by \pgf@x\relax
     \ifdim\pgf@yb>\pgf@ya
-    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},0) coordinate (start);
-    \path (#3) ++(0,\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
-    \coordinate (br) (end -| east);
-    \fill (start) rectangle (br);
-    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},0) coordinate (start);
-    \path (#4) ++(0,\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
-    \coordinate (bl) (end -| west);
-    \fill (start) rectangle (br);
+    \path (#3) ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},\pgfkeysvalueof{/tikz/highlighter/initial height}) coordinate (start);
+    \path (#3) ++(0pt,-1*\pgfkeysvalueof{/tikz/highlighter/final depth}) coordinate (end);
+    \fill (start) rectangle (end -| east);
+    \path (#4) ++(0pt,\pgfkeysvalueof{/tikz/highlighter/initial height}) coordinate (start);
+    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final offset},-1*\pgfkeysvalueof{/tikz/highlighter/final depth}) coordinate (end);
+    \fill (start -| west) rectangle (end);
     \else
-    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},0) coordinate (start);
-    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final extent},\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
-    \path (start) ++ (0,\pgfkeysvalueof{/tikz/highlighter/line height}) coordinate (tl);
-    \coordinate (tr) at (tl -| east);
-    \coordinate (ml) at (start -| west);
-    \coordinate (bl) at (end -| west);
-    \path (end) ++(0,\pgfkeysvalueof{/tikz/highlighter/line height}) coordinate (mr);
-    \coordinate (br) at (mr -| east);
-    \fill (start) -- (tl) -- (tr) -- (br) -- (mr) -- (end) -- (bl) -- (ml) -- cycle;
+    \path (#3) ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},\pgfkeysvalueof{/tikz/highlighter/initial height}) coordinate (tl);
+    \path (#3) ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},-1*\pgfkeysvalueof{/tikz/highlighter/initial depth}) coordinate (start);
+    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final offset},-1*\pgfkeysvalueof{/tikz/highlighter/final depth}) coordinate (end);
+    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final offset},\pgfkeysvalueof{/tikz/highlighter/final height}) coordinate (mr);
+    \fill (start) -- (tl) -- (tl -| east) -- (mr -| east) -- (mr) -- (end) -- (end -| west) -- (start -| west) -- cycle;
     \fi
     \fi
     \end{tikzpicture}}
@@ -779,14 +824,16 @@ and the derived files           tikzmark.ins,
       remember picture,
       overlay,
       baseline=0pt,
+      /tikz/highlighter/.cd,
       #1,
+      /tikz/.cd,
       highlight=#2,
       every path/.append style={
         highlight=#2
       }
     ]%
-   \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},\pgfkeysvalueof{/tikz/highlighter/line height}) coordinate (start);
-    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final extent},\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
+   \path (#3) ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},\pgfkeysvalueof{/tikz/highlighter/initial height}) coordinate (start);
+    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final offset},-1*\pgfkeysvalueof{/tikz/highlighter/final depth}) coordinate (end);
     \fill (start) rectangle (end);
     \end{tikzpicture}}
 %    \end{macrocode}
@@ -798,7 +845,9 @@ and the derived files           tikzmark.ins,
       remember picture,
       overlay,
       baseline=0pt,
+      /tikz/highlighter/.cd,
       #1,
+      /tikz/.cd,
       highlight=#2,
       every path/.append style={
         highlight=#2
@@ -809,33 +858,30 @@ and the derived files           tikzmark.ins,
     \tikz@scan@one@point\pgfutil@firstofone(#4)\relax
     \pgf@xb=\pgf@x
     \ifdim\pgf@xa=\pgf@xb
-    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},\pgfkeysvalueof{/tikz/highlighter/line height}) coordinate (start);
-    \path (#4) ++(0,\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
+    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial height},\pgfkeysvalueof{/tikz/highlighter/initial offset}) coordinate (start);
+    \path (#4) ++(-1*\pgfkeysvalueof{/tikz/highlighter/final depth},-1*\pgfkeysvalueof{/tikz/highlighter/final offset}) coordinate (end);
     \fill (start) rectangle (end);
     \else
     \page@node
-    \path (page.north) ++(\pgfkeysvalueof{/tikz/highlighter/top margin extent},0) coordinate (north);
-    \path (page.south) ++(\pgfkeysvalueof{/tikz/highlighter/bottom margin extent},0) coordinate (south);
-    \advance\pgf@xa by \pgfkeysvalueof{/tikz/highlighter/line height}\relax
+    \path (page.north) ++(\pgfkeysvalueof{/tikz/highlighter/top margin},0) coordinate (north);
+    \path (page.south) ++(-1*\pgfkeysvalueof{/tikz/highlighter/bottom margin},0) coordinate (south);
+  \pgfmathsetlength\pgf@y{\pgfkeysvalueof{/tikz/highlighter/initial height}}
+    \advance\pgf@xa by \pgf@y\relax
+  \pgfmathsetlength\pgf@y{-1*\pgfkeysvalueof{/tikz/highlighter/final depth}}
+    \advance\pgf@xb by \pgf@y\relax
     \ifdim\pgf@xb<\pgf@xa
-    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},0) coordinate (start);
-    \path (#3) ++(0,\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
-    \coordinate (br) (end |- south);
-    \fill (start) rectangle (br);
-    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},0) coordinate (start);
-    \path (#4) ++(0,\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
-    \coordinate (bl) (end |- north);
-    \fill (start) rectangle (br);
+    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial height},\pgfkeysvalueof{/tikz/highlighter/initial offset}) coordinate (start);
+    \path (#3) ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial depth},0pt) coordinate (end);
+    \fill (start) rectangle (end |- south);
+    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final height},0) coordinate (start);
+    \path (#4) ++(-1*\pgfkeysvalueof{/tikz/highlighter/final depth},-1*\pgfkeysvalueof{/tikz/highlighter/final depth}) coordinate (end);
+    \fill (start) rectangle (end |- north);
     \else
-    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial indent},\pgfkeysvalueof{/tikz/highlighter/line height}) coordinate (start);
-    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final extent},\pgfkeysvalueof{/tikz/highlighter/final descent}) coordinate (end);
-    \path (start) ++ (\pgfkeysvalueof{/tikz/highlighter/line height},0) coordinate (tl);
-    \coordinate (tr) at (tl |- north);
-    \coordinate (ml) at (start |- south);
-    \coordinate (bl) at (end |- north);
-    \path (end) ++(-\pgfkeysvalueof{/tikz/highlighter/line height},0) coordinate (mr);
-    \coordinate (br) at (mr |- south);
-    \fill (start) -- (tl) -- (tr) -- (bl) -- (end) -- (mr) -- (br) -- (ml) -- cycle;
+    \path (#3) ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial depth},\pgfkeysvalueof{/tikz/highlighter/initial offset}) coordinate (start);
+    \path (#3) ++(\pgfkeysvalueof{/tikz/highlighter/initial height},\pgfkeysvalueof{/tikz/highlighter/initial offset}) coordinate (tl);
+    \path (#4) ++(-1*\pgfkeysvalueof{/tikz/highlighter/final depth},-1*\pgfkeysvalueof{/tikz/highlighter/final offset}) coordinate (mr);
+    \path (#4) ++(\pgfkeysvalueof{/tikz/highlighter/final height},-1*\pgfkeysvalueof{/tikz/highlighter/final offset}) coordinate (end);
+    \fill (start) -- (tl) -- (tl |- north) -- (end |- north) -- (end) -- (mr) -- (mr |- south) -- (start |- south) -- cycle;
     \fi
     \fi
     \end{tikzpicture}}
@@ -853,19 +899,45 @@ and the derived files           tikzmark.ins,
     opacity=\pgfkeysvalueof{/tikz/#1/opacity},
   },
   /tikz/highlighter/.is family,
+  /tikz/highlighter/.unknown/.code={%
+    \let\tk@searchname=\pgfkeyscurrentname%
+    \pgfkeysalso{%
+      /tikz/\tk@searchname=#1
+    }
+  },
   /tikz/highlighter/.cd,
   colour/.initial=yellow,
   width/.initial=12pt,
   cap/.initial=butt,
   opacity/.initial=1,
-  line height/.initial=\baselineskip,
-  initial indent/.initial=-.5\baselineskip,
-  final descent/.initial=-.5ex,
-  final extent/.initial=.5\baselineskip,
-  left margin extent/.initial=-.5\baselineskip,
-  right margin extent/.initial=.5\baselineskip,
-  top margin extent/.initial=.5\baselineskip,
-  bottom margin extent/.initial=-.5\baselineskip,
+  initial height/.initial=\baselineskip,
+  initial depth/.initial=.5ex,
+  initial offset/.initial=.5\baselineskip,
+  final height/.initial=\baselineskip,
+  final depth/.initial=.5ex,
+  final offset/.initial=.5\baselineskip,
+  height/.style={
+    initial height=#1,
+    final height=#1
+  },
+  depth/.style={
+    initial depth=#1,
+    final depth=#1
+  },
+  offset/.style={
+    initial offset=#1,
+    final offset=#1
+  },
+  margin/.style={
+    left margin=#1,
+    right margin=#1,
+    top margin=#1,
+    bottom margin=#1,
+  },
+  left margin/.initial=.5\baselineskip,
+  right margin/.initial=.5\baselineskip,
+  top margin/.initial=.5\baselineskip,
+  bottom margin/.initial=-.5\baselineskip,
   /tikz/fader/.is family,
   /tikz/fader/.cd,
   colour/.initial=gray,
@@ -939,3 +1011,4 @@ and the derived files           tikzmark.ins,
 % \Finale
 
 \endinput
+
