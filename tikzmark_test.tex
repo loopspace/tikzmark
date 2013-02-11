@@ -1,3 +1,46 @@
+\documentclass[a4paper]{article}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{tikzmark}
+\usetikzmarklibrary{highlight}
+
+\newcommand{\tikzmarkset}[2]{
+	\pgfkeys{/tikz/#1/.cd,#2}
+}
+
+\begin{document}
+\[\highlight[colour=green!50]{x+y}=100\]
+
+\tikzmarkset{highlighter}{left margin=1ex,right margin=1ex, top margin=3ex, bottom margin=4ex,colour=cyan!50}
+\[\highlight{x+y}=100\] % same as before? Strange!
+
+\tikzmarkset{highlighter}{colour=orange!50,initial offset=1pt,final offset=1pt}
+\[\highlight[final depth=7pt]{x+y}=100\]
+
+\tikzset{/tikz/highlighter/.cd,colour=green!50}
+\[\highlight[initial offset=1pt, final offset=1pt,height=14pt, final depth=11pt]{\dfrac{x}{y}}=100\]
+
+% check if holds many times
+\tikzmarkset{highlighter}{colour=white!20!violet!80!purple,initial offset=1pt,final offset=1pt,height=16pt, final depth=11pt}
+\begin{equation}
+V(z)=\sum_{\kappa=0}^{\infty}{\; \highlight{\int_{0}^{\infty}{\dfrac{\mathrm{e}^{-\lambda x}\cdot (\lambda x)^\kappa}{\kappa!} \, b(x)\,\mathrm{d} x}}\cdot z^\kappa}
+\end{equation}
+
+\begin{equation}
+V(z)=\sum_{\kappa=0}^{\infty}{\; \highlight{\int_{0}^{\infty}{\dfrac{\mathrm{e}^{-\lambda x}\cdot (\lambda x)^\kappa}{\kappa!} \, b(x)\,\mathrm{d} x}}\cdot z^\kappa}
+\end{equation}
+
+\[\highlight{\dfrac{x}{y}}=100\]
+
+\[\highlight[initial offset=1pt, final offset=1pt, final depth=5pt]{x+y}=100\] % it inheriths the height
+\[\highlight[initial offset=1pt, final offset=1pt, height=8pt, final depth=5pt]{x+y}=100\] % custom height
+
+\tikzmarkset{fader}{colour=white!20!violet!80!purple,opacity=0.3,cap=rect} % cap don't seem to work
+\begin{equation}
+V(z)=\sum_{\kappa=0}^{\infty}{\; \fade{\int_{0}^{\infty}{\dfrac{\mathrm{e}^{-\lambda x}\cdot (\lambda x)^\kappa}{\kappa!} \, b(x)\,\mathrm{d} x}}\cdot z^\kappa}
+\end{equation}
+\end{document}
+
 \immediate\write18{tex tikzmark.dtx}
 \documentclass[a4paper]{article}
 \usepackage{amsmath}
@@ -452,4 +495,5 @@ A\tikzmark{a} tikzmark \tikzmark{b}.
 
 % Local Variables:
 % tex-output-type: "pdf18"
-% End:%   
+% End:
+%
