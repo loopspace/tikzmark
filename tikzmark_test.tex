@@ -1,8 +1,10 @@
 \documentclass[a4paper]{article}
 \usepackage{amsmath}
 \usepackage{tikz}
-\usetikzlibrary{tikzmark}
-\usetikzmarklibrary{highlight}
+\usepackage{lipsum}
+\usepackage{listings}
+\usetikzlibrary{arrows,tikzmark,fit,shadows}
+\usetikzmarklibrary{highlight,listings}
 
 \newcommand{\tikzmarkset}[2]{
 	\pgfkeys{/tikz/#1/.cd,#2}
@@ -39,16 +41,6 @@ V(z)=\sum_{\kappa=0}^{\infty}{\; \highlight{\int_{0}^{\infty}{\dfrac{\mathrm{e}^
 \begin{equation}
 V(z)=\sum_{\kappa=0}^{\infty}{\; \fade{\int_{0}^{\infty}{\dfrac{\mathrm{e}^{-\lambda x}\cdot (\lambda x)^\kappa}{\kappa!} \, b(x)\,\mathrm{d} x}}\cdot z^\kappa}
 \end{equation}
-\end{document}
-
-\immediate\write18{tex tikzmark.dtx}
-\documentclass[a4paper]{article}
-\usepackage{amsmath}
-\usepackage{listings}
-\usepackage{lipsum}
-\usepackage{tikz}
-\usetikzlibrary{arrows,tikzmark,fit,calc,shadows}
-\usetikzmarklibrary{highlight,listings}
 
 
 \tikzset{
@@ -202,8 +194,6 @@ And this was very odd because it was the middle of the night.
 The moon was up there sulkily because she thought the sun had no business to be there after the day was done\hlend.
 ``It's very rude of him,'' she said, ``to come and spoil the fun.''
 }
-
-\begin{document}
 
 \section{Highlighting}
 
