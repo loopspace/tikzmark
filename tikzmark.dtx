@@ -85,7 +85,7 @@ and the derived files           tikzmark.ins,
 %</internal>
 %<*package>
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{tikzmark}[2012/10/24 v1.0 TikZmark]
+\ProvidesPackage{tikzmark}[2013/04/22 v1.1 TikZmark]
 %</package>
 %<*driver>
 \documentclass{ltxdoc}
@@ -189,7 +189,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{442}
+% \CheckSum{465}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -209,6 +209,7 @@ and the derived files           tikzmark.ins,
 %
 %
 % \changes{1.0}{2012/11/08}{Converted to DTX file}
+% \changes{1.1}{2013/04/22}{Fix bug relating to active semi-colon}
 %
 % \DoNotIndex{\newcommand,\newenvironment}
 %
@@ -656,9 +657,30 @@ and the derived files           tikzmark.ins,
 % \end{macro}
 %
 % \begin{macro}{\tikzmark}
+% Fix for bug reported in \href{http://tex.stackexchange.com/q/110014/86}{ Tikzmark and french seem to conflict}.
+% 
+% First, the version for active semi-colon.
+%    \begin{macrocode}
+\begingroup
+\catcode`\;=\active
+\gdef\tikzmark@active#1#2{%
+\tikz[remember picture with id=#2] #1;}
+\endgroup
+%    \end{macrocode}
+% Now, the version for ordinary semi-colon.
+%    \begin{macrocode}
+\def\tikzmark@nonactive#1#2{%
+\tikz[remember picture with id=#2] #1;}
+%    \end{macrocode}
+% And the wrapper function.
 %    \begin{macrocode}
 \newcommand\tikzmark[2][]{%
-\tikz[remember picture with id=#2] #1;}
+\ifnum\catcode`\;=\active
+\let\@next=\tikzmark@active
+\else
+\let\@next=\tikzmark@nonactive
+\fi
+\@next{#1}{#2}}
 %    \end{macrocode}
 % \end{macro}
 %
