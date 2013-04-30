@@ -189,7 +189,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{465}
+% \CheckSum{475}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -358,11 +358,15 @@ and the derived files           tikzmark.ins,
 % Sometimes this can be useful.
 % Note, though, that if this is used to define an offset coordinate then this will only be available in the document \emph{after} the \Verb+\tikzmark+ command, even on later runs.
 %
+% If the \Verb+beamer+ class is loaded then this command is made overlay-aware.
+%
 % \item \Verb+\pgfmark+\marg{name}
 %
 % This is a more basic form of the \Verb+\tikzmark+ which doesn't use any of the \Verb+\tikz+ overhead.
 % One advantage of this command is that it doesn't create an \Verb+hbox+.
 % 
+% If the \Verb+beamer+ class is loaded then this command is made overlay-aware.
+%
 % \item \Verb+\iftikzmark+\marg{name}\marg{true code}\marg{false code}
 %
 % This is a simple conditional to test if a particular mark is available.
@@ -559,7 +563,7 @@ and the derived files           tikzmark.ins,
 % The positions are already recorded in the \Verb+aux+ file, all we really need to do is provide them with better names.
 %    \begin{macrocode}
   save picture id/.code={%
-      \immediate\write\pgfutil@auxout{%
+      \protected@write\pgfutil@auxout{}{%
         \string\savepointas{#1}{\pgfpictureid}}%
   },
 %    \end{macrocode}
@@ -695,10 +699,28 @@ and the derived files           tikzmark.ins,
       \noexpand\write\noexpand\pgfutil@auxout{%
         \string\savepicturepage{\pgfpictureid}{\noexpand\thepage}}}%
     \pgf@temp
-    \immediate\write\pgfutil@auxout{%
+    \protected@write\pgfutil@auxout{}{%
       \string\savepointas{#1}{\pgfpictureid}}%
     \egroup
   }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% If the beamer class is used, make the commands overlay aware.
+% \begin{macro}{\tikzmark<>}
+%    \begin{macrocode}
+\@ifclassloaded{beamer}{
+  \renewcommand<>{\tikzmark}[2][]{\only#3{\beameroriginal{\tikzmark}[{#1}]{#2}}}
+}{}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\pgfmark<>}
+%    \begin{macrocode}
+\@ifclassloaded{beamer}{
+  \renewcommand<>{\pgfmark}[1]{\only#3{\beameroriginal{\pgfmark}{#1}}}
+}{}
 %    \end{macrocode}
 % \end{macro}
 %
