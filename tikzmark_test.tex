@@ -1,16 +1,36 @@
+\immediate\write18{tex tikzmark.dtx}
 \documentclass[a4paper]{article}
 \usepackage{amsmath}
 \usepackage{tikz}
 \usepackage{lipsum}
 \usepackage{listings}
 \usetikzlibrary{arrows,tikzmark,fit,shadows}
-\usetikzmarklibrary{highlight,listings}
+\usetikzmarklibrary{%
+%  highlight,
+  listings
+}
 
 \newcommand{\tikzmarkset}[2]{
 	\pgfkeys{/tikz/#1/.cd,#2}
 }
 
 \begin{document}
+
+hello\tikzmark{a} world
+
+\begin{tikzpicture}[remember picture, overlay]
+\draw (0,0) -- (1,-1);
+\draw[->] (0,0) to[bend left] (pic cs:a);
+\end{tikzpicture}
+
+\begin{tikzpicture}[remember picture, overlay, shift={(1cm,-1cm)}, scale=2]
+\draw (0,0) -- (1,-1);
+\draw[->] (0,0) to[bend left] (pic cs:a);
+\end{tikzpicture}
+
+\end{document}
+
+
 \[\highlight[colour=green!50]{x+y}=100\]
 
 \tikzmarkset{highlighter}{left margin=1ex,right margin=1ex, top margin=3ex, bottom margin=4ex,colour=cyan!50}
