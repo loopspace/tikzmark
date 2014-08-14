@@ -15,7 +15,35 @@
 }
 
 \begin{document}
+\newbox\mybox
 
+Some text before the box
+\savebox\mybox{\pgfmark{as}hello world}%
+some text after the box
+
+\wd\mybox0pt\relax
+\ht\mybox0pt\relax
+\dp\mybox0pt\relax
+
+greetings \unhbox\mybox earthlings
+
+This is a \tikz \node[text width=1cm] {Say \subnode{a}{hello} everyone}; node
+
+\vspace{2cm}
+
+\tikz[remember picture,overlay] \draw[->] (0,0) -- (pic cs:hello) (0,0) -- (pic cs:a);
+
+\begin{tikzpicture}[remember picture]
+\node[text width=3cm] {A lot of text with some of it in a subnode.
+Let's write some more before we get to the subnode.
+Here's a sentence with more padding.
+What happens if we write more\pgfmark{hello} \subnode[inner sep=0pt]{stuff}{after it?}};
+\draw[->] (0,2) to[bend left] (stuff.north);
+\node[fit=(stuff),draw,inner sep=0pt] {};
+\draw[->] (1,0) -- (pic cs:hello);
+\end{tikzpicture}
+
+\end{document}
 hello\tikzmark{a} world
 
 \begin{tikzpicture}[remember picture, overlay]
