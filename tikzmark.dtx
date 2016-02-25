@@ -682,11 +682,11 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \newcommand\tikzmark[2][]{%
 \ifnum\catcode`\;=\active
-\let\@next=\tikzmark@active
+\let\tikzmark@next=\tikzmark@active
 \else
-\let\@next=\tikzmark@nonactive
+\let\tikzmark@next=\tikzmark@nonactive
 \fi
-\@next{#1}{#2}}
+\tikzmark@next{#1}{#2}}
 %    \end{macrocode}
 % \end{macro}
 %
