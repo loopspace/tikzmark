@@ -564,7 +564,7 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
   save picture id/.code={%
       \protected@write\pgfutil@auxout{}{%
-        \string\savepointas{#1}{\pgfpictureid}}%
+        \string\savepointas{#1}{\pgfpictureid}{0pt}{0pt}}%
   },
 %    \end{macrocode}
 % Provides a way to test if a picture has already been saved (in particular, can avoid errors on first runs)
@@ -602,8 +602,9 @@ and the derived files           tikzmark.ins,
 % \begin{macro}{\savepointas}
 % This is what gets written to the \Verb+aux+ file.
 %    \begin{macrocode}
-\def\savepointas#1#2{%
+\def\savepointas#1#2#3#4{%
   \expandafter\gdef\csname save@pt@#1\endcsname{#2}%
+  \expandafter\gdef\csname save@pt@#1@offset\endcsname{\pgfqpoint{#3}{#4}}%
 }
 \def\savepicturepage#1#2{%
   \expandafter\gdef\csname save@pg@#1\endcsname{#2}%
@@ -644,6 +645,9 @@ and the derived files           tikzmark.ins,
       \advance\pgf@y by -\pgf@ya
       \pgf@xa=\pgf@x
       \pgf@ya=\pgf@y
+    \pgf@process{\pgfpointorigin\csname save@pt@\tmk@label @offset\endcsname}%
+    \advance\pgf@xa by \pgf@x
+    \advance\pgf@ya by \pgf@y
       \@ifundefined{save@pg@\csname save@pt@\tmk@label\endcsname}{}{%
         \@ifundefined{save@pg@\pgfpictureid}{}{%
           \pgfkeysvalueof{/tikz/next page vector}%
@@ -678,15 +682,36 @@ and the derived files           tikzmark.ins,
 \def\tikzmark@nonactive#1#2{%
 \tikz[remember picture with id=#2] #1;}
 %    \end{macrocode}
-% And the wrapper function.
+% And the wrapper function for the above, which is when we're outside a tikzpicture environment
 %    \begin{macrocode}
-\newcommand\tikzmark[2][]{%
-\ifnum\catcode`\;=\active
-\let\tikzmark@next=\tikzmark@active
-\else
-\let\tikzmark@next=\tikzmark@nonactive
-\fi
-\tikzmark@next{#1}{#2}}
+\newcommand\tikzmark@outside[2][]{%
+  \ifnum\catcode`\;=\active
+   \let\tikzmark@next=\tikzmark@active
+  \else
+   \let\tikzmark@next=\tikzmark@nonactive
+  \fi
+  \tikzmark@next{#1}{#2}%
+}
+%    \end{macrocode}
+% This is for when we're inside a tikzpicture environment
+%    \begin{macrocode}
+\def\tikzmark@inside#1#2{%
+  \tikzset{remember picture}%
+  \tikz@scan@one@point\pgfutil@firstofone#2\relax
+  \protected@write\pgfutil@auxout{}{%
+    \string\savepointas{#1}{\pgfpictureid}{\the\pgf@x pt}{\the\pgf@y pt}}%
+}
+%    \end{macrocode}
+% And finally, the ultimate invoker:
+%    \begin{macrocode}
+\def\tikzmark{%
+  \ifx\pgfpictureid\@undefined
+  \let\tikzmark@next=\tikzmark@outside
+  \else
+  \let\tikzmark@next=\tikzmark@inside
+  \fi
+  \tikzmark@next%
+}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -702,7 +727,7 @@ and the derived files           tikzmark.ins,
         \string\savepicturepage{\pgfpictureid}{\noexpand\thepage}}}%
     \pgf@temp
     \protected@write\pgfutil@auxout{}{%
-      \string\savepointas{#1}{\pgfpictureid}}%
+      \string\savepointas{#1}{\pgfpictureid}{0pt}{0pt}}%
     \egroup
   }
 %    \end{macrocode}

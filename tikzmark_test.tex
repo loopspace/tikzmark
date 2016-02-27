@@ -14,7 +14,30 @@
 	\pgfkeys{/tikz/#1/.cd,#2}
 }
 
+\makeatletter
+\newcommand\inpic[2]{%
+  \tikzset{remember picture with id=#1}
+  \tikz@scan@one@point\pgfutil@firstofone#2\relax
+  \protected@write\pgfutil@auxout{}{%
+    \string\savepointas{#1}{\pgfpictureid}{\the\pgf@x pt}{\the\pgf@y pt}}%
+}
+\makeatother
+
 \begin{document}
+
+\tikzmark{a}Where does this \begin{tikzpicture}[baseline=-5cm]
+\draw (0,0) -- +(2,0) node[right] (top) {\(0\)};
+\draw (0,-5) -- +(2,0) node[right] {\(-5\)};
+\tikzmark{c}{([yshift=-1cm]top.south)}
+\end{tikzpicture} end up?\tikzmark{b}
+
+\begin{tikzpicture}[remember picture,overlay]
+\draw[->] (pic cs:a) to[bend right] (pic cs:b);
+\draw[->] (pic cs:a) to[bend right] (top);
+\draw[->] (pic cs:a) to[bend right] (pic cs:c);
+\end{tikzpicture}
+
+\end{document}
 \newbox\mybox
 
 Some text before the box
