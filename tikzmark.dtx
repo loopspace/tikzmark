@@ -564,13 +564,13 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
   save picture id/.code={%
       \protected@write\pgfutil@auxout{}{%
-        \string\savepointas{#1}{\pgfpictureid}{0pt}{0pt}}%
+        \string\savepointas{\tikzmark@pp@name{#1}}{\pgfpictureid}{0pt}{0pt}}%
   },
 %    \end{macrocode}
 % Provides a way to test if a picture has already been saved (in particular, can avoid errors on first runs)
 %    \begin{macrocode}
   if picture id/.code args={#1#2#3}{%
-    \@ifundefined{save@pt@#1}{%
+    \@ifundefined{save@pt@\tikzmark@pp@name{#1}}{%
       \pgfkeysalso{#3}%
     }{
       \pgfkeysalso{#2}%
@@ -596,8 +596,19 @@ and the derived files           tikzmark.ins,
   next page/ignore/.style={%
     next page vector={\pgfqpoint{0pt}{0pt}}%
   },
+%    \end{macrocode}
+% Prefix and suffix for tikzmark names, shamelessly borrowed from the main tikz code  
+%    \begin{macrocode}
+  tikzmark prefix/.initial=,%
+  tikzmark suffix/.initial=,%
 }
 %    \end{macrocode}
+%
+% \begin{macro}{\tikzmark@pp@name}
+%    \begin{macrocode}
+\def\tikzmark@pp@name#1{\csname pgfk@/tikz/tikzmark prefix\endcsname#1\csname pgfk@/tikz/tikzmark suffix\endcsname}%
+%    \end{macrocode}
+% \end{macro}
 %
 % \begin{macro}{\savepointas}
 % This is what gets written to the \Verb+aux+ file.
@@ -616,7 +627,7 @@ and the derived files           tikzmark.ins,
 % Auxiliary command for the coordinate system.
 %    \begin{macrocode}
 \def\tmk@labeldef#1,#2\@nil{%
-  \def\tmk@label{#1}%
+  \edef\tmk@label{\tikzmark@pp@name{#1}}%
   \def\tmk@def{#2}%
 }
 %    \end{macrocode}
@@ -699,7 +710,7 @@ and the derived files           tikzmark.ins,
   \tikzset{remember picture}%
   \tikz@scan@one@point\pgfutil@firstofone#2\relax
   \protected@write\pgfutil@auxout{}{%
-    \string\savepointas{#1}{\pgfpictureid}{\the\pgf@x pt}{\the\pgf@y pt}}%
+    \string\savepointas{\tikzmark@pp@name{#1}}{\pgfpictureid}{\the\pgf@x pt}{\the\pgf@y pt}}%
 }
 %    \end{macrocode}
 % And finally, the ultimate invoker:
@@ -727,7 +738,7 @@ and the derived files           tikzmark.ins,
         \string\savepicturepage{\pgfpictureid}{\noexpand\thepage}}}%
     \pgf@temp
     \protected@write\pgfutil@auxout{}{%
-      \string\savepointas{#1}{\pgfpictureid}{0pt}{0pt}}%
+      \string\savepointas{\tikzmark@pp@name{#1}}{\pgfpictureid}{0pt}{0pt}}%
     \egroup
   }
 %    \end{macrocode}
@@ -750,6 +761,16 @@ and the derived files           tikzmark.ins,
 }{}
 %    \end{macrocode}
 % \end{macro}
+%
+% If beamer is loaded, add a suffix based on the frame number
+% \begin{macrocode}
+\@ifclassloaded{beamer}{
+  \tikzset{
+    tikzmark suffix=-\the\beamer@slideinframe
+  }
+}{}
+% \end{macrocode}
+%
 %
 % \begin{macro}{\iftikzmark}
 %    \begin{macrocode}
