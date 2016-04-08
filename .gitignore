@@ -1,0 +1,15 @@
+*~
+*.aux
+*.log
+*.out
+*.hd
+*.idx
+*.nav
+*.snm
+*.pdf
+*.ins
+*.toc
+*.glo
+README.txt
+*.code.tex
+CTAN
