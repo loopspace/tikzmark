@@ -14,6 +14,10 @@
 	\pgfkeys{/tikz/#1/.cd,#2}
 }
 
+\tikzset{
+  tikzmark prefix=stuff,
+}
+
 \makeatletter
 \newcommand\inpic[2]{%
   \tikzset{remember picture with id=#1}
