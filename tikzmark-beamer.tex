@@ -1,0 +1,89 @@
+\documentclass{beamer}
+%\url{http://tex.stackexchange.com/q/302517/86}
+
+
+
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{arrows, shapes, calc, decorations.pathmorphing, tikzmark, decorations.pathreplacing, scopes, fit}
+
+\newcommand{\Bmat}{\mathbf{B}}
+\newcommand{\zvec}{\mathbf{z}}
+\newcommand{\trace}[1]{\text{Tr}\left[#1\right]}
+
+\makeatletter
+\newcounter{jumping}
+\resetcounteronoverlays{jumping}
+
+\def\jump@setbb#1#2#3{%
+  \@ifundefined{jump@#1@maxbb}{%
+    \expandafter\gdef\csname jump@#1@maxbb\endcsname{#3}%
+  }{%
+    \csname jump@#1@maxbb\endcsname
+    \pgf@xa=\pgf@x
+    \pgf@ya=\pgf@y
+    #3
+    \pgfmathsetlength\pgf@x{max(\pgf@x,\pgf@xa)}%
+    \pgfmathsetlength\pgf@y{max(\pgf@y,\pgf@ya)}%
+    \expandafter\xdef\csname jump@#1@maxbb\endcsname{\noexpand\pgfpoint{\the\pgf@x}{\the\pgf@y}}%
+  }
+  \@ifundefined{jump@#1@minbb}{%
+    \expandafter\gdef\csname jump@#1@minbb\endcsname{#2}%
+  }{%
+    \csname jump@#1@minbb\endcsname
+    \pgf@xa=\pgf@x
+    \pgf@ya=\pgf@y
+    #2
+    \pgfmathsetlength\pgf@x{min(\pgf@x,\pgf@xa)}%
+    \pgfmathsetlength\pgf@y{min(\pgf@y,\pgf@ya)}%
+    \expandafter\xdef\csname jump@#1@minbb\endcsname{\noexpand\pgfpoint{\the\pgf@x}{\the\pgf@y}}%
+  }
+}
+
+\tikzset{
+  stop jumping/.style={
+    execute at end picture={%
+      \stepcounter{jumping}%
+      \immediate\write\pgfutil@auxout{%
+        \noexpand\jump@setbb{\the\value{jumping}}{\noexpand\pgfpoint{\the\pgf@picminx}{\the\pgf@picminy}}{\noexpand\pgfpoint{\the\pgf@picmaxx}{\the\pgf@picmaxy}}
+      },
+      \csname jump@\the\value{jumping}@maxbb\endcsname
+      \path (\the\pgf@x,\the\pgf@y);
+      \csname jump@\the\value{jumping}@minbb\endcsname
+      \path (\the\pgf@x,\the\pgf@y);
+    },
+  }
+}
+
+\makeatother
+
+\begin{document}
+
+\begin{frame}{The Wahba Problem can be solved through an \textbf{eigenvalue--eigenvector} problem.}
+    The attitude quaternion is the eigenvector corresponding to the largest eigenvalue in the system
+    \begin{center}
+%        \only<1->{
+        \begin{tikzpicture}[remember picture]
+            \node<1-> (dport) {$\subnode[inner sep=0pt]{dmat}{$\textbf{K}$} \bar{\textbf{q}} = \lambda \subnode[inner sep=0pt]{qbar}{$\bar{\textbf{q}}$}$};
+            {[draw=blue, ultra thick, <-]
+                \draw<2-> (dmat.south)--+(-10pt,-10pt) node[inner sep=0pt, anchor=north east, align=center] (dav) {$\textbf{K} = \left[\begin{array}{c c}
+                        \subnode[inner sep=0pt]{smat}{$\textbf{S}$} - \mu \textbf{I}_{3 \times 3} & \textbf{z} \\
+                        \subnode[inner sep=0pt]{zvec}{$\textbf{z}^T$} & \subnode[inner sep=0pt]{mu}{$\mu$}
+                    \end{array}\right]$};
+
+                 \draw<2-> (qbar.south)--+(10pt,-10pt) node[inner sep=0pt, anchor=north west, align=center] (quat) {\small attitude quaternion};
+
+                 \draw<3-> (smat.north)--+(-10pt,10pt) node[inner sep=0pt, anchor=south east, align=center] (sexp) {\small $\mathbf{S}=\Bmat+\Bmat^T$};
+                 \draw<3-> (zvec.south)--+(-10pt,-10pt) node[inner sep=0pt, anchor=north east, align=center] (zexp) {\small $\zvec=\sum_{i=1}^m\frac{1}{\sigma_i^2}\left(\widetilde{\mathbf{b}_i}\times\mathbf{a}_i\right)$};
+                 \draw<3-> (mu.south)--+(10pt,-10pt) node[inner sep=0pt, anchor=north west, align=center] (muexp) {\small $\mu=\trace{\subnode[inner sep=0pt]{bmat}{$\Bmat$}}$};
+                 \draw<4> (bmat.south)--+(10pt,-10pt) node[inner sep=0pt, anchor=north west, align=center] (bexp) {\small $\Bmat=\sum_{i=1}^m\frac{1}{\sigma_i^2}\widetilde{\mathbf{b}_i}\mathbf{a}_i^T$};
+
+            }
+
+
+        \end{tikzpicture}
+%    }
+    \end{center}
+
+\end{frame}
+\end{document}
