@@ -5,7 +5,7 @@
 %<*readme>
 ----------------------------------------------------------------
 tikzmark --- remembering absolute positioning with TikZ
-E-mail: stacey@math.ntnu.no
+E-mail: loopspace@mathforge.org
 Released under the LaTeX Project Public License v1.3c or later
 See http://www.latex-project.org/lppl.txt
 ----------------------------------------------------------------
@@ -28,7 +28,7 @@ exclusively) with TikZ.
 \preamble
 ----------------------------------------------------------------
 tikzmark --- remembering absolute positioning with TikZ.
-E-mail: stacey@math.ntnu.no
+E-mail: loopspace@mathforge.org
 Released under the LaTeX Project Public License v1.3c or later
 See http://www.latex-project.org/lppl.txt
 ----------------------------------------------------------------
@@ -36,7 +36,7 @@ See http://www.latex-project.org/lppl.txt
 \endpreamble
 \postamble
 
-Copyright (C) 2011 by Andrew Stacey <stacey@math.ntnu.no>
+Copyright (C) 2011-2016 by Andrew Stacey <loopspace@mathforge.org>
 
 This work may be distributed and/or modified under the
 conditions of the LaTeX Project Public License (LPPL), either
@@ -83,10 +83,6 @@ and the derived files           tikzmark.ins,
   \expandafter\endgroup
 \fi
 %</internal>
-%<*package>
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{tikzmark}[2013/04/22 v1.1 TikZmark]
-%</package>
 %<*driver>
 \documentclass{ltxdoc}
 \usepackage[T1]{fontenc}
@@ -189,7 +185,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{475}
+% \CheckSum{539}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -210,13 +206,14 @@ and the derived files           tikzmark.ins,
 %
 % \changes{1.0}{2012/11/08}{Converted to DTX file}
 % \changes{1.1}{2013/04/22}{Fix bug relating to active semi-colon}
+% \changes{1.2}{2016/04/07}{Tikzmark works inside tikzpicture, added easy suffix and prefix for tikzmarks}
 %
 % \DoNotIndex{\newcommand,\newenvironment}
 %
 % \providecommand*{\url}{\texttt}
 % \title{The \textsf{tikzmark} package}
-% \author{Andrew Stacey \\ \url{stacey@math.ntnu.no}}
-% \date{v1.0~from 2013/04/12}
+% \author{Andrew Stacey \\ \url{loopspace@mathforge.org}}
+% \date{v1.2~from 2016/04/07}
 %
 %
 % \maketitle
@@ -271,7 +268,7 @@ and the derived files           tikzmark.ins,
 % \section{History}
 %
 % I wrote the original \Verb+\tikzmark+ macro in 2009 for use in lecture slides prepared with the \Verb+beamer+ package.
-% It's original definition was:
+% Its original definition was:
 %
 % \begin{lstlisting}
 % \newcommand{\tikzmark}[1]{\tikz[overlay,remember picture] \node (#1) {};}
@@ -360,6 +357,15 @@ and the derived files           tikzmark.ins,
 %
 % If the \Verb+beamer+ class is loaded then this command is made overlay-aware.
 %
+% \item \Verb+\tikzmark+\marg{name}\marg{coordinate}
+%
+% v1.2 of the \Verb+tikzmark+ package introduced a new variant of \Verb+\tikzmark+ which works inside a \Verb+tikzpicture+.
+% One feature of \Verb+\tikzmark+ which isn't part of TikZ's normal coordinate remembering system is the ability to use a \Verb+\tikzmark+ coordinate before it is defined (due to the use of the \Verb+aux+ file).
+% This is potentially useful to have inside a \Verb+tikzpicture+ and so it is now possible to use \Verb+\tikzmark+ inside a \Verb+tikzpicture+.
+% The syntax is slightly different as we need to specify the coordinates of a point to remember.
+%
+% This was inspired by the question \href{http://tex.stackexchange.com/q/295903/86}{Refer to a node in tikz that will be defined ``in the future'' (two passes)?} on TeX-SX.
+%
 % \item \Verb+\pgfmark+\marg{name}
 %
 % This is a more basic form of the \Verb+\tikzmark+ which doesn't use any of the \Verb+\tikz+ overhead.
@@ -393,6 +399,17 @@ and the derived files           tikzmark.ins,
 % The key \Verb+/tikz/next page+ can be used to set this to certain standard vectors by specifying where the ``next page'' is considered as lying corresponding to the current page.
 % Possible values are (by default) \Verb+above+, \Verb+below+, \Verb+left+, \Verb+right+, and \Verb+ignore+.
 % (The last one sets the vector to the zero vector.)
+%
+% \item \Verb+/tikz/tikzmark prefix=<prefix>+  and \Verb+/tikz/tikzmark suffix=<suffix>+
+%
+% These keys allow for the automatic addition of a prefix and/or suffix to each \Verb+\tikzmark+ name.
+% The prefix and suffix are added both at time of definition and of use, so providing one is in the same scope there is no difference in at the user level when using prefixes and suffixes.
+% What it can be useful for is to make the \Verb+\tikzmark+ names unique.
+% In particular, if the \Verb+beamer+ class is loaded then an automatic suffix is added corresponding to the overlay.
+% This means that if a slide consists of several overlays with \Verb+\tikzmark+s on them, and the positions of the \Verb+\tikzmark+s move then the resulting pictures should look right. 
+% Without the automatic suffix, only the final positions of the marks would be used throughout.
+%
+% This was inspired by the question \href{http://tex.stackexchange.com/q/302517/86}{using tikzmark subnode with overlays beamer} on TeX-SX.
 %
 % \item \Verb+\subnode[options]{name}{content}+
 %
@@ -452,6 +469,22 @@ and the derived files           tikzmark.ins,
 % \begin{tikzpicture}[remember picture]
 % \node (a) at (0,0) {This has a \subnode{sub}{subnode} in it};
 % \draw[->] (0,-1) to[bend right] (sub);
+% \end{tikzpicture}
+% \end{example}
+%
+% An example using \Verb+\tikzmark+ inside a \Verb+tikzpicture+
+%
+% \begin{example}
+% \tikzset{tikzmark prefix=ex3-}
+% \begin{tikzpicture}[remember picture,overlay]
+% \draw[->,line width=1mm,cyan] (pic cs:a) to[bend left] (pic cs:b);
+% \end{tikzpicture}
+%
+% By placing the \tikzmark{a}code before the marks, the arrow goes under the subsequent text and picture.
+%
+% \begin{tikzpicture}
+% \filldraw[fill=gray] (0,0) circle[radius=1cm];
+% \tikzmark{b}{(-1,-1)}
 % \end{tikzpicture}
 % \end{example}
 %
@@ -763,13 +796,13 @@ and the derived files           tikzmark.ins,
 % \end{macro}
 %
 % If beamer is loaded, add a suffix based on the frame number
-% \begin{macrocode}
+%    \begin{macrocode}
 \@ifclassloaded{beamer}{
   \tikzset{
     tikzmark suffix=-\the\beamer@slideinframe
   }
 }{}
-% \end{macrocode}
+%    \end{macrocode}
 %
 %
 % \begin{macro}{\iftikzmark}
