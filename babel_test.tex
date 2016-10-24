@@ -1,0 +1,14 @@
+\immediate\write18{tex tikzmark.dtx}
+\documentclass{article}
+\usepackage[frenchb]{babel}
+\usepackage{tikz}
+\usetikzlibrary{calc,babel,tikzmark}
+\begin{document}
+test\tikzmark{a}
+
+\tikz[remember picture with id=b]{}
+
+Go to test\tikz[overlay, remember picture] \draw[->] (0,0) to (pic cs:a);.
+
+\tikz[overlay, remember picture] \draw[->] (pic cs:b) to (pic cs:a);
+\end{document}

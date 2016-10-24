@@ -146,7 +146,7 @@ and the derived files           tikzmark.ins,
     }%
     \ifx\blines\empty
     \else
-    \edef\temp{\noexpand\tikz[remember         picture,overlay]\noexpand\node[fit={\blines},balloon] (#1) {};}%
+    \edef\temp{\noexpand\tikz[remember         picture,overlay]{\noexpand\node[fit={\blines},balloon] (#1) {}}}%
     \temp
     \fi
   }
@@ -711,30 +711,12 @@ and the derived files           tikzmark.ins,
 % \end{macro}
 %
 % \begin{macro}{\tikzmark}
-% Fix for bug reported in \href{http://tex.stackexchange.com/q/110014/86}{ Tikzmark and french seem to conflict}.
-% 
-% First, the version for active semi-colon.
-%    \begin{macrocode}
-\begingroup
-\catcode`\;=\active
-\gdef\tikzmark@active#1#2{%
-\tikz[remember picture with id=#2] #1;}
-\endgroup
-%    \end{macrocode}
-% Now, the version for ordinary semi-colon.
-%    \begin{macrocode}
-\def\tikzmark@nonactive#1#2{%
-\tikz[remember picture with id=#2] #1;}
-%    \end{macrocode}
-% And the wrapper function for the above, which is when we're outside a tikzpicture environment
+% The active/non-active semi-colon is proving somewhat hazardous to \Verb+\tikzmark+ (see  \href{http://tex.stackexchange.com/q/110014/86}{ Tikzmark and french seem to conflict} and \href{http://tex.stackexchange.com/q/335485/86}{Clash between tikzmark, babel package (french) and babel tikzlibrary}) so \Verb+\tikzmark+ now uses the brace-delimited version of the \Verb+\tikz+ command.
+%
+% This version is for when we're outside a tikzpicture environment
 %    \begin{macrocode}
 \newcommand\tikzmark@outside[2][]{%
-  \ifnum\catcode`\;=\active
-   \let\tikzmark@next=\tikzmark@active
-  \else
-   \let\tikzmark@next=\tikzmark@nonactive
-  \fi
-  \tikzmark@next{#1}{#2}%
+\tikz[remember picture with id=#2]{#1}%
 }
 %    \end{macrocode}
 % This is for when we're inside a tikzpicture environment
