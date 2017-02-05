@@ -587,7 +587,7 @@ and the derived files           tikzmark.ins,
       \ifpgfrememberpicturepositiononpage%
       \edef\pgf@temp{%
         \noexpand\write\noexpand\pgfutil@auxout{%
-        \string\savepicturepage{\pgfpictureid}{\noexpand\thepage}}}%
+        \string\savepicturepage{\pgfpictureid}{\noexpand\arabic{page}}}}%
       \pgf@temp
       \fi%
     },
@@ -750,7 +750,7 @@ and the derived files           tikzmark.ins,
       \pgfsys@markposition{\pgfpictureid}%
     \edef\pgf@temp{%
       \noexpand\write\noexpand\pgfutil@auxout{%
-        \string\savepicturepage{\pgfpictureid}{\noexpand\thepage}}}%
+        \string\savepicturepage{\pgfpictureid}{\noexpand\arabic{page}}}}%
     \pgf@temp
     \protected@write\pgfutil@auxout{}{%
       \string\savepointas{\tikzmark@pp@name{#1}}{\pgfpictureid}{0pt}{0pt}}%
@@ -764,7 +764,8 @@ and the derived files           tikzmark.ins,
 % \begin{macro}{\tikzmark<>}
 %    \begin{macrocode}
 \@ifclassloaded{beamer}{
-  \renewcommand<>{\tikzmark}[2][]{\only#3{\beameroriginal{\tikzmark}[{#1}]{#2}}}
+  \renewcommand<>{\tikzmark@outside}[2][]{\only#3{\beameroriginal{\tikzmark@outside}[{#1}]{#2}}}
+  \renewcommand<>{\tikzmark@inside}[2]{\only#3{\beameroriginal{\tikzmark@inside}{#1}{#2}}}
 }{}
 %    \end{macrocode}
 % \end{macro}
