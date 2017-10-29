@@ -29,6 +29,32 @@
 
 \begin{document}
 
+% Without suffix
+
+\tikzmark{bar}
+\iftikzmark{bar}{
+  TIKZMARK BAR IS AVAILABLE
+}{
+  TIKZMARK BAR IS NOT AVAILABLE
+}
+
+% With suffix
+
+\tikzset{tikzmark suffix=-foo}%
+
+\tikzmark{baz}
+\iftikzmark{baz}{
+  TIKZMARK BAZ IS AVAILABLE
+}{
+  TIKZMARK BAZ IS NOT AVAILABLE
+}
+\end{document}
+
+    Test.\tikzmark{a}
+    \tikz[overlay,remember picture]\tikzmark{b}{(pic cs:a)} \path (0,0);
+    \tikz[overlay,remember picture]\node[draw] at (pic cs:b) {};
+\end{document}
+
 \tikzmark{a}Where does this \begin{tikzpicture}[baseline=-5cm]
 \draw (0,0) -- +(2,0) node[right] (top) {\(0\)};
 \draw (0,-5) -- +(2,0) node[right] {\(-5\)};
