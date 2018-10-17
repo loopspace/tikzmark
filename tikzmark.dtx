@@ -1157,12 +1157,24 @@ and the derived files           tikzmark.ins,
 % Set up a stream for saving the nodes data to a file
 %    \begin{macrocode}    
 \iow_new:N \g__sn_stream
-\iow_open:Nn \g__sn_stream {\jobname.nodes}
+\bool_new:N \g__sn_stream_bool
+
+\cs_new_nopar:Npn \sn_open_stream:
+{
+  \bool_if:NF \g__sn_stream_bool
+  {
+    \iow_open:Nn \g__sn_stream {\jobname.nodes}
+    \bool_gset_true:N \g__sn_stream_bool
+  }
+}
 
 \AtEndDocument
 {
   \ExplSyntaxOn
-  \iow_close:N \g__sn_stream
+  \bool_if:NT \g__sn_stream_bool
+  {
+    \iow_close:N \g__sn_stream
+  }
   \ExplSyntaxOff
 }
 %    \end{macrocode}
@@ -1294,6 +1306,7 @@ and the derived files           tikzmark.ins,
 % Save the token list to the aux file so that on reading the aux
 % file, we restore the node definitions
 %    \begin{macrocode}
+  \sn_open_stream:
   \iow_now:Nx \g__sn_stream
   {
     \iow_newline:
