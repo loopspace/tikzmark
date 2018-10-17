@@ -84,16 +84,17 @@ and the derived files           tikzmark.ins,
 \fi
 %</internal>
 %<*driver>
-\documentclass{ltxdoc}
+\documentclass[full]{l3doc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
+\usepackage{amsmath}
 %\usepackage{morefloats}
 \usepackage{listings}
 \usepackage{tikz}
 \usetikzlibrary{fit,arrows,tikzmark,shadows,decorations.pathreplacing,calc}
 \usetikzmarklibrary{listings}
 
-\usepackage[numbered]{hypdoc}
+%\usepackage[numbered]{hypdoc}
 \definecolor{lstbgcolor}{rgb}{0.9,0.9,0.9} 
  
 \usepackage{listings}
@@ -115,6 +116,19 @@ and the derived files           tikzmark.ins,
 
    \fbox{\begin{minipage}{.9\linewidth}
      \input{example.out}
+   \end{minipage}}
+\end{center}
+}
+
+\newenvironment{justexample}
+  {\VerbatimEnvironment
+   \begin{VerbatimOut}[gobble=2]{example.out}}
+  {\end{VerbatimOut}
+   \begin{center}
+%   \setlength{\parindent}{0pt}
+   \fbox{\begin{minipage}{.9\linewidth}
+     \lstset{breakatwhitespace=true,breaklines=true,language=TeX,basicstyle=\small}
+     \lstinputlisting[]{example.out}
    \end{minipage}}
 \end{center}
 }
@@ -185,7 +199,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{620}
+% \CheckSum{900}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -324,7 +338,7 @@ and the derived files           tikzmark.ins,
 %
 % \begin{figure}
 % \centering
-% \includegraphics{tikzmark_example}
+% \includegraphics{tikzmarkExample}
 % \caption{First use of tikzmark}
 % \label{fig:tikzmarkex}
 % \end{figure}
@@ -343,6 +357,15 @@ and the derived files           tikzmark.ins,
 % A major revision dates from an answer given in \href{http://tex.stackexchange.com/a/50054/86}{March 2012} where the question was actually about \Verb+\tikzmark+.
 % This version added two important features: a TikZ coordinate system for referencing saved marks directly and the ability to refer to marks earlier in the document than they are defined (the mechanism for remembering points uses the \Verb+aux+ file anyway so this was more about exposing the information earlier than anything complicated).
 % Then in October 2012 there was a  \href{http://tex.stackexchange.com/q/79121/86}{question} where it would have been useful to remember which page the mark was on and a \href{http://tex.stackexchange.com/q/79762/86}{question} where for some reason using the \Verb+\tikz+ macro didn't work so the \Verb+\pgfmark+ macro was introduced.
+%
+% By this point, the \Verb+\tikzmark+ command had morphed considerably from its original definition.
+% Experience has shown that on the TeX-SX site it has continued to be used in its original form as well as its current form.
+% I've therefore taken the decision to reintroduce a form of the original command, now called \Verb+\tikzmarknode+.
+% It goes beyond the original version in that it uses some \Verb+\mathchoice+ trickery (inspired by \href{https://tex.stackexchange.com/a/122419/86}{this answer} from Heiko Oberdiek) to hopefully correctly choose the correct math style.
+%
+% The original reason for not using nodes inside \Verb+\tikzmark+ was to be able to use the information from a \Verb+\tikzmark+ before the point where it was defined (via information saved into the \Verb+aux+ file).
+% Thanks to a \href{https://tex.stackexchange.com/a/415862/86}{question on TeX-SX} about saving node information, I've developed code that solves that issue with nodes.
+% As it fits in the general concept of this package, I've added that code to the \Verb+\tikzmark+ package.
 %
 % \section{Usage}
 %
@@ -439,6 +462,49 @@ and the derived files           tikzmark.ins,
 % The simplest way to turn a pseudo-node into a more normal node is to use the \Verb+fit+ library.
 % Using the above example, \Verb+\node[fit=(a),draw,inner sep=0pt] {};+ would draw a rectangle around the word \Verb+sub+ of exactly the same size as would appear had a normal node been created.
 %
+% \item The node saving system takes the information stored about a node and saves it for later use.
+% That later use can be in the same document, in which case it should be saved just to the memory of the current TeX process, or it can be used earlier in the same document or another document altogether (in particular, if the nodes are defined in a \Verb+tikzpicture+ that has been externalised, this can be used to import the node information into the main file) in which cases the node data is saved to a file.
+%
+% Nodes are saved and restored in groups which are named.
+% If the node information is saved to a file, loading it from the file does not automatically define the nodes but rather stores it in TeX's memory so that it can be restored as required.
+%
+% The keys for working with saving and restoring nodes are as follows.
+%
+% \begin{itemize}
+% \item \Verb+save node+
+%
+% This is the key to put on a node that is to be saved.
+%
+% \item \Verb+set node group=<name>+
+%
+% Nodes are grouped together into a list that can be saved either to a file or for use later on in the document.
+% This sets the name for the current group.
+%
+% \item \Verb+restore nodes from list=<name>+
+%
+% This restores the node information from the named list to the current \Verb+tikzpicture+.
+% This is required both for when the node information comes from a file or from earlier in the same document.
+%
+% \item \Verb+save nodes to file+
+%
+% This is a \Verb+true/false+ key which determines whether to save the node information to a file.
+%
+% \item \Verb+restore nodes from file=<name>+
+%
+% This loads the node information from the file into the current document.
+% They need to be further loaded into a given \Verb+tikzpicture+ using the key \Verb+restore nodes from list+.
+%
+% The \Verb+<name>+ can have the syntax \Verb+[options]{name}+, where \Verb+options+ can be used to influence how the nodes are restored.
+% The key \Verb+transform saved nodes+ (see below) can be given here.
+% Another useful key is the \Verb+name prefix+ key which is applied to all restored nodes.
+%
+% \item \Verb+transform saved nodes+
+%
+% A particular use-case for restoring saved nodes is to safely include one \Verb+tikzpicture+ inside another by creating an image out of the inner picture and including it back in as a picture inside a node.
+% In that situation, restoring the nodes from the inner picture can make it possible to refer to coordinates from the inner picture to the outer one.
+% If there is a transformation in place on the containing node, this key applies that transformation to all the nodes in the inner picture.
+%
+% \end{itemize}
 % \end{enumerate}
 %
 % \section{Examples and Extras}
@@ -494,6 +560,90 @@ and the derived files           tikzmark.ins,
 % \tikzmark{b}{(-1,-1)}
 % \end{tikzpicture}
 % \end{example}
+%
+% The \Verb+\tikmarknode+ puts a node around some text, which can be referred to later, and adds a \Verb+\tikzmark+ at its origin.
+%
+% \begin{example}
+% Putting a node around \tikzmarknode{txt}{some text} means we can connect text together, including in maths:
+% \[
+% \tikzmarknode{a}{\sum_{k=1}^n} k^{\tikzmarknode{b}{2}}
+% \]
+%
+% \begin{tikzpicture}[remember picture,overlay]
+% \draw[->] (txt) -- (a);
+% \draw[->] (a.south) to[out=-90,in=-45] (b.south east);
+% \end{tikzpicture}
+% \end{example}
+%
+% The syntax for saving node data is illustrated by the following example.
+%
+% File \Verb+firstpicture.tex+:
+%
+% \begin{justexample}
+% \documentclass[tikz,border=10pt]{standalone}
+% \usetikzlibrary{tikzmark,shapes.geometric}
+% \begin{document}
+% \begin{tikzpicture}[save nodes to file]
+% \node[draw,rotate=-30,save node](1) at (-2,0) {1};
+% \draw[->] (0,0) -- (1);
+% \node[draw,ellipse,save node] (c) at (current bounding box.center) {};
+% \end{tikzpicture}
+% \end{document}
+% \end{justexample}
+%
+% File \Verb+secondpicture.tex+:
+%
+% \begin{justexample}
+% \documentclass[tikz,border=10pt]{standalone}
+% \usetikzlibrary{tikzmark,shapes.geometric}
+% \begin{document}
+% \begin{tikzpicture}[save nodes to file]
+% \node[draw,rotate=-70,save node] (2) at (2,0) {2};
+% \draw[->] (0,0) -- (2);
+% \node[draw,ellipse,save node] (c) at (current bounding box.center) {};
+% \end{tikzpicture}
+% \end{document}
+% \end{justexample}
+%
+% Main file:
+%
+% \begin{justexample}
+% \documentclass{article}
+% \usepackage{tikz}
+% \usetikzlibrary{tikzmark}
+% 
+% \begin{document}
+% \begin{tikzpicture}
+% 
+% \node[draw,
+%   rotate=30,
+%   restore nodes from file={[transform saved nodes,name prefix=pic-1-]{firstpicture}}
+% ] (a-1) at (-2,-3) {\includegraphics{firstpicture.pdf}};
+% 
+% \node[draw,
+%   rotate=70,
+%   restore nodes from file={[transform saved nodes,name prefix=pic-2-]{secondpicture}}
+% ] (a-2) at (+2,+2) {\includegraphics{secondpicture.pdf}};
+% 
+% \draw[red] (pic-1-1.north west) --  (pic-1-1.north east) --  (pic-1-1.south east) --  (pic-1-1.south west) -- cycle;
+% \draw[red] (pic-2-2.north west) --  (pic-2-2.north east) --  (pic-2-2.south east) --  (pic-2-2.south west) -- cycle;
+% 
+% \node[red] at (pic-1-1) {1};
+% \node[red] at (pic-2-2) {2};
+% 
+% \draw (a-1) circle[radius=5pt];
+% \draw (a-2) circle[radius=5pt];
+% 
+% \draw (pic-1-1) -- (pic-2-2);
+% \end{tikzpicture}
+% \end{document}
+% \end{justexample}
+%
+% This produces:
+%
+% \begin{center}
+% \fbox{\includegraphics{tikzrefextnodes}}
+% \end{center}
 %
 % \subsection{Code Listings}
 %
@@ -577,6 +727,12 @@ and the derived files           tikzmark.ins,
 %<*tikzlibrary>
 % \fi
 % \subsection{Main Code}
+%
+%
+% The \Verb+save nodes+ code uses \LaTeX3.
+%    \begin{macrocode}
+\RequirePackage{expl3, l3keys2e, xparse}
+%    \end{macrocode}
 %
 %    \begin{macrocode}
 \tikzset{%
@@ -944,6 +1100,472 @@ and the derived files           tikzmark.ins,
 %    \end{macrocode}
 % \end{macro}
 %
+% The \Verb+save node+ code is written in \LaTeX3.
+%
+%    \begin{macrocode}  
+\ExplSyntaxOn
+%    \end{macrocode}
+%
+% We save our information in a ``property list'', which is L3's
+% version of an associative array or dictionary.  They keys will give
+% the ability to store several groups of nodes and restore them at
+% will.
+%    \begin{macrocode}  
+\prop_new:N \g__sn_prop
+%    \end{macrocode}  
+% We'll need a couple of spare token lists
+%    \begin{macrocode}  
+\tl_new:N \l__sn_tmpa_tl
+\tl_new:N \l__sn_tmpb_tl
+%    \end{macrocode}  
+%
+% Another useful token list
+%    \begin{macrocode}
+\tl_new:N \l__open_bracket_tl
+\tl_set:Nn  \l__open_bracket_tl {[} %]
+%    \end{macrocode}
+%
+% This token list is used for our current node group name
+%    \begin{macrocode}
+\tl_new:N \l__sn_group_tl
+%    \end{macrocode}
+%
+% We store up the nodes in a list and save them at the end of a given tikzpicture.    
+%    \begin{macrocode}    
+\clist_new:N \l__sn_nodes_clist
+%    \end{macrocode}
+%
+% This boolean is for whether we save to a file or not.
+%    \begin{macrocode}
+\bool_new:N \l__sn_file_bool
+%    \end{macrocode}
+%
+% Dimensions and token lists for shifting
+%    \begin{macrocode}    
+\dim_new:N \l__sn_x_dim
+\dim_new:N \l__sn_y_dim
+\dim_new:N \l__sn_xa_dim
+\dim_new:N \l__sn_ya_dim
+\tl_new:N \l__sn_centre_tl
+
+\tl_new:N \l__sn_transformation_tl
+\tl_set:Nn \l__sn_transformation_tl {{1}{0}{0}{1}{0pt}{0pt}}
+%    \end{macrocode}
+%
+% Set up a stream for saving the nodes data to a file
+%    \begin{macrocode}    
+\iow_new:N \g__sn_stream
+\iow_open:Nn \g__sn_stream {\jobname.nodes}
+
+\AtEndDocument
+{
+  \ExplSyntaxOn
+  \iow_close:N \g__sn_stream
+  \ExplSyntaxOff
+}
+%    \end{macrocode}
+%
+% LaTeX3 wrappers around some PGF functions (to avoid @-catcode issues)
+%    \begin{macrocode}
+\makeatletter
+\cs_set_eq:NN \tikz_set_node_name:n \tikz@pp@name
+\cs_set_eq:NN \tikz_fig_must_be_named: \tikz@fig@mustbenamed
+
+\cs_new_nopar:Npn \tikz_scan_point:n #1
+{
+  \tikz@scan@one@point\pgfutil@firstofone#1\relax
+}
+
+\cs_new_nopar:Npn \tikz_scan_point:NNn #1#2#3
+{
+  \tikz@scan@one@point\pgfutil@firstofone#3\relax
+  \dim_set_eq:NN #1 \pgf@x
+  \dim_set_eq:NN #2 \pgf@y
+}
+
+\makeatother
+\cs_generate_variant:Nn \tikz_scan_point:n {V}
+\cs_generate_variant:Nn \tikz_scan_point:NNn {NNV}
+%    \end{macrocode}
+%
+% \begin{macro}{\save_nodes:Nn}
+% This is the command that actually does the work.  It constructs a
+% token list which contains the code that will restore the node data
+% when invoked.  The two arguments are the token list to store this in
+% and a comma separated list of the node names to be saved.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \save_nodes:Nn #1#2
+{
+%    \end{macrocode}
+% Clear our token lists
+%    \begin{macrocode}
+  \tl_clear:N \l__sn_tmpa_tl
+%    \end{macrocode}
+% Set the centre of the picture
+%    \begin{macrocode}  
+  \tikz_scan_point:NNn \l__sn_x_dim \l__sn_y_dim {(current~ bounding~ box.center)}
+  \dim_set:Nn \l__sn_x_dim {-\l__sn_x_dim}
+  \dim_set:Nn \l__sn_y_dim {-\l__sn_y_dim}
+  \tl_set:Nx \l__sn_centre_tl {{1}{0}{0}{1}{\dim_use:N \l__sn_x_dim}{\dim_use:N \l__sn_y_dim}}
+%    \end{macrocode}  
+% Iterate over the list of node names
+%    \begin{macrocode}
+  \clist_map_inline:nn {#2}
+  {
+%    \end{macrocode}  
+% Test to see if the node has been defined
+%    \begin{macrocode}
+    \tl_if_exist:cT {pgf@sh@ns@##1}
+    {
+%    \end{macrocode}  
+% The node information is stored in a series of macros of the form
+% \Verb+\pgf@sh@XX@nodename+ where XX is one of the following.
+%    \begin{macrocode}
+      \clist_map_inline:nn {ns,np,ma,pi}
+      {
+%    \end{macrocode}  
+% Our token list will look like:
+%
+% \Verb+\tl_set:cn {pgf@sh@XX@nodename}+ {<current contents of that macro>}
+%
+% This will restore \Verb+\pgf@sh@XX@nodename+ to its current value
+% when this list is invoked.
+%
+% This part puts the \Verb+\tl_set:cn {pgf@sh@XX@nodename}+ in place
+%    \begin{macrocode}
+        \tl_put_right:Nn \l__sn_tmpa_tl
+        {
+          \tl_gset:cn {pgf@sh@####1@ \tikz_set_node_name:n{##1} }
+        }
+%    \end{macrocode}  
+% Now we put the current contents in place.  We're doing this in
+% an expansive context to get at the contents.  The \Verb+\exp_not:v+
+% part takes the current value of \Verb+\pgf@sh@XX@nodename+ and puts
+% it in place, preventing further expansion.
+%    \begin{macrocode}
+        \tl_if_exist:cTF {pgf@sh@####1@##1}
+        {
+          \tl_put_right:Nx \l__sn_tmpa_tl {{\exp_not:v {pgf@sh@####1@ \tikz_set_node_name:n {##1}}}}
+        }
+        {
+          \tl_put_right:Nx \l__sn_tmpa_tl {{}}
+        }
+      }
+      \tl_put_right:Nn \l__sn_tmpa_tl
+      {
+        \tl_gset:cn {pgf@sh@nt@ \tikz_set_node_name:n{##1} }
+      }
+      \compose_transformations:NVv \l__sn_tmpb_tl \l__sn_centre_tl {pgf@sh@nt@##1}
+      \tl_put_right:Nx \l__sn_tmpa_tl {{\exp_not:V \l__sn_tmpb_tl}}
+      \tl_put_right:Nn \l__sn_tmpa_tl {\transform_node:Nn \l__sn_transformation_tl {\tikz_set_node_name:n{##1}} }
+    }
+  }
+%    \end{macrocode}  
+% Once we've assembled our token list, we store it in the given
+% token list
+%    \begin{macrocode}
+  \tl_set_eq:NN #1 \l__sn_tmpa_tl
+}
+%    \end{macrocode}  
+% \end{macro}
+%
+% \begin{macro}{\save_nodes_to_list:nn}
+% Save the nodes to a list, given a key
+%    \begin{macrocode}
+\cs_new_nopar:Npn \save_nodes_to_list:nn #1#2
+{
+  \save_nodes:Nn \l__sn_tmpa_tl {#2}
+  \prop_gput:NnV \g__sn_prop {#1} \l__sn_tmpa_tl
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\save_nodes_to_file:n}
+% Save the nodes to a file
+%    \begin{macrocode}
+\cs_new_nopar:Npn \save_nodes_to_file:n #1
+{
+  \save_nodes:Nn \l__sn_tmpa_tl {#1}
+%    \end{macrocode}  
+% Save the token list to the aux file so that on reading the aux
+% file, we restore the node definitions
+%    \begin{macrocode}
+  \iow_now:Nx \g__sn_stream
+  {
+    \iow_newline:
+    \exp_not:V \l__sn_tmpa_tl
+    \iow_newline:
+  }
+}
+%    \end{macrocode}
+% \end{macro}
+%    \begin{macrocode}
+\cs_generate_variant:Nn \save_nodes_to_list:nn {VV}
+\cs_generate_variant:Nn \save_nodes_to_file:n {V}
+%    \end{macrocode}
+%
+% \begin{macro}{\restore_nodes_from_list:n}
+%    \begin{macrocode}
+\cs_new_nopar:Npn \restore_nodes_from_list:n #1
+{
+%    \end{macrocode}
+% Restoring nodes is simple: look in the property list for the key
+% and if it exists, invoke the macro stored there.
+%    \begin{macrocode}  
+  \prop_get:NnNT \g__sn_prop {#1} \l__sn_tmpa_tl
+  {
+    \tl_use:N \l__sn_tmpa_tl
+  }
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\restore_nodes_from_file:n}
+%    \begin{macrocode}
+\cs_new_nopar:Npn \restore_nodes_from_file:n #1
+{
+  \file_if_exist:nT {#1.nodes}
+  {
+    \ExplSyntaxOn
+    \file_input:n {#1.nodes}
+    \ExplSyntaxOff
+  }
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\compose_transformations:Nnn}
+% Compose PGF transformations \Verb+#2 * #3+, storing the result in \Verb+#1+
+
+% I think the PGF Manual might be incorrect.  It implies that the
+% matrix is stored row-major, but experimentation implies column-major.
+%
+% That is, \Verb+{a}{b}{c}{d}{s}{t}+ is:
+%
+% \[
+% \begin{bmatrix} a & c \\ b & d \end{bmatrix}
+% \]
+%
+%    \begin{macrocode}
+\cs_new_nopar:Npn \compose_transformations:Nnn #1#2#3
+{
+  \tl_gset:Nx #1
+  {
+    {\fp_eval:n {
+        \tl_item:nn {#2} {1}
+        * \tl_item:nn {#3} {1}
+        +
+        \tl_item:nn {#2} {3}
+        * \tl_item:nn {#3} {2}
+      }
+    }
+    {\fp_eval:n {
+        \tl_item:nn {#2} {2}
+        * \tl_item:nn {#3} {1}
+        +
+        \tl_item:nn {#2} {4}
+        * \tl_item:nn {#3} {2}
+      }
+    }
+    {\fp_eval:n {
+        \tl_item:nn {#2} {1}
+        * \tl_item:nn {#3} {3}
+        +
+        \tl_item:nn {#2} {3}
+        * \tl_item:nn {#3} {4}
+      }
+    }
+    {\fp_eval:n {
+        \tl_item:nn {#2} {2}
+        * \tl_item:nn {#3} {3}
+        +
+        \tl_item:nn {#2} {4}
+        * \tl_item:nn {#3} {4}
+      }
+    }
+    {\fp_to_dim:n {
+        \tl_item:nn {#2} {1}
+        * \tl_item:nn {#3} {5}
+        +
+        \tl_item:nn {#2} {3}
+        * \tl_item:nn {#3} {6}
+        +
+        \tl_item:nn {#2} {5}
+      }
+    }
+    {\fp_to_dim:n {
+        \tl_item:nn {#2} {2}
+        * \tl_item:nn {#3} {5}
+        +
+        \tl_item:nn {#2} {4}
+        * \tl_item:nn {#3} {6}
+        +
+        \tl_item:nn {#2} {6}
+      }
+    }
+  }
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%    \begin{macrocode}
+\cs_generate_variant:Nn \compose_transformations:Nnn {cVv,NVv,NVn,NvV,NnV}
+%    \end{macrocode}
+%
+% \begin{macro}{\transform_node:Nn}
+%    \begin{macrocode}
+\cs_new_nopar:Npn \transform_node:Nn #1#2
+{
+  \compose_transformations:cVv {pgf@sh@nt@#2} #1 {pgf@sh@nt@#2}
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\set_transform_from_node:n}
+%    \begin{macrocode}
+\cs_new_nopar:Npn \set_transform_from_node:n #1
+{
+  \tl_set_eq:Nc \l__sn_transformation_tl {pgf@sh@nt@#1}
+  \tikz_scan_point:NNn \l__sn_x_dim \l__sn_y_dim {(#1.center)}
+    
+  \dim_set:Nn \l__sn_x_dim {\l__sn_x_dim - \tl_item:cn {pgf@sh@nt@#1}{5}}
+  \dim_set:Nn \l__sn_y_dim {\l__sn_y_dim - \tl_item:cn {pgf@sh@nt@#1}{6}}
+    
+  \compose_transformations:NnV  \l__sn_transformation_tl {{1}{0}{0}{1}{\dim_use:N \l__sn_x_dim}{\dim_use:N \l__sn_y_dim}} \l__sn_transformation_tl
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%    \begin{macrocode}
+\cs_generate_variant:Nn \set_transform_from_node:n {v}
+%    \end{macrocode}
+%
+% Set the TikZ keys for access to the above commands.
+%    \begin{macrocode}
+\tikzset{
+  transform~ saved~ nodes/.code={
+    \set_transform_from_node:v {tikz@last@fig@name}
+  },
+  set~ node~ group/.code={
+    \tl_set:Nn \l__sn_group_tl {#1}
+    \pgfkeysalso{
+      execute~ at~ end~ scope={
+        \maybe_save_nodes:
+      }
+    }
+  },
+%    \end{macrocode}
+% Are we saving to a file?
+%    \begin{macrocode}  
+  save~ nodes~ to~ file/.code={
+    \tl_if_eq:nnTF {#1}{false}
+    {
+      \bool_set_false:N \l__sn_file_bool
+    }
+    {
+      \bool_set_true:N \l__sn_file_bool
+    }
+    \pgfkeysalso{
+      execute~ at~ end~ scope={
+        \maybe_save_nodes:
+      }
+    }
+  },
+%    \end{macrocode}  
+% Append current node to the list of nodes to be saved
+%    \begin{macrocode}
+  save~ node/.code={
+    \tikz_fig_must_be_named:
+    \pgfkeysalso{append~ after~ command={
+        \pgfextra{
+          \clist_gput_right:Nv \l__sn_nodes_clist {tikz@last@fig@name}
+        }
+      }
+    }
+  },
+%    \end{macrocode}  
+% Restore nodes from file
+%    \begin{macrocode}
+  restore~ nodes~ from~ file/.code={
+    \tikz_fig_must_be_named:
+    \pgfkeysalso{append~ after~ command={
+        \pgfextra{
+          \scope
+          \split_argument:NNn \tikzset \restore_nodes_from_file:n {#1}
+          \endscope
+        }
+      }
+    }
+  },
+%    \end{macrocode}  
+% Restore nodes from list
+%    \begin{macrocode}
+  restore~ nodes~ from~ list/.code={
+    \tikz_fig_must_be_named:
+    \pgfkeysalso{append~ after~ command={
+        \pgfextra{
+          \scope
+          \split_argument:NNn \tikzset \restore_nodes_from_list:n {#1}
+          \endscope
+        }
+      }
+    }
+  }
+}
+\cs_generate_variant:Nn \clist_gput_right:Nn {Nv}
+%    \end{macrocode}
+%
+% \begin{macro}{\split_argument:NNn}
+%    \begin{macrocode}
+\cs_new_nopar:Npn \split_argument:NNn #1#2#3
+{
+  \tl_set:Nx \l__sn_tmpa_tl {\tl_head:n {#3}}
+  \tl_if_eq:NNTF \l__sn_tmpa_tl \l__open_bracket_tl
+  {
+    \split_argument_aux:NNp #1#2#3
+  }
+  {
+    #2 {#3}
+  }
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\split_argument_aux:NNp}
+%    \begin{macrocode}
+\cs_new_nopar:Npn \split_argument_aux:NNp #1#2[#3]#4
+{
+  #1 {#3}
+  #2 {#4}
+}
+%    \end{macrocode}  
+% \end{macro}
+%
+% \begin{macro}{\maybe_save_nodes:}
+%    \begin{macrocode}
+\cs_new_nopar:Npn \maybe_save_nodes:
+{
+  \clist_if_empty:NF \l__sn_nodes_clist
+  {
+    \bool_if:NTF \l__sn_file_bool
+    {
+      \save_nodes_to_file:V \l__sn_nodes_clist
+    }
+    {
+      \tl_if_empty:NF \l__sn_group_tl
+      {
+        \save_nodes_to_list:VV \l__sn_group_tl \l__sn_nodes_clist
+      }
+    }
+    \clist_gclear:N \l__sn_nodes_clist
+  }
+}
+%    \end{macrocode}  
+% \end{macro}
+%
+%    \begin{macrocode}
+\ExplSyntaxOff
+%    \end{macrocode}  
 % \iffalse
 %</tikzlibrary>
 % \fi
