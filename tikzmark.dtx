@@ -84,7 +84,7 @@ and the derived files           tikzmark.ins,
 \fi
 %</internal>
 %<*driver>
-\documentclass[full]{l3doc}
+\documentclass{ltxdoc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{amsmath}
@@ -103,6 +103,8 @@ and the derived files           tikzmark.ins,
  
 \usepackage{fancyvrb}
 
+\usepackage[hyperindex=false]{hyperref}
+                                
 \newenvironment{example}
   {\VerbatimEnvironment
    \begin{VerbatimOut}[gobble=2]{example.out}}
@@ -190,8 +192,8 @@ and the derived files           tikzmark.ins,
     },
   }
 
-\EnableCrossrefs
-\CodelineIndex
+\DisableCrossrefs
+% \CodelineIndex
 \RecordChanges
 \begin{document}
   \DocInput{\jobname.dtx}
@@ -715,8 +717,8 @@ and the derived files           tikzmark.ins,
 % \section{Acknowledgements}
 %
 % The \Verb+\tikzmark+ macro has been used and abused by many users of \href{http://tex.stackexchange.com}{TeX-SX}.
-% Of particular note (but in no particular order) are \href{}{Peter Grill}, \href{}{Gonzalo Medina}, \href{}{Claudio Fiandrino}, and \href{}{percusse}.
-% I would also like to mention David Carlisle whose knowledge of TikZ continues to astound us all.
+% Of particular note (but in no particular order) are \href{https://tex.stackexchange.com/users/4301/peter-grill}{Peter Grill}, \href{https://tex.stackexchange.com/users/3954/gonzalo-medina}{Gonzalo Medina}, \href{https://tex.stackexchange.com/users/13304/claudio-fiandrino}{Claudio Fiandrino}, \href{https://tex.stackexchange.com/users/3235/percusse}{percusse}, and \href{https://tex.stackexchange.com/users/121799/marmot}{marmot}.
+% I would also like to mention \href{https://tex.stackexchange.com/users/1090/david-carlisle}{David Carlisle} whose knowledge of TikZ continues to astound us all.
 % 
 %
 % \StopEventually{}
@@ -1188,6 +1190,8 @@ and the derived files           tikzmark.ins,
 \cs_generate_variant:Nn \tikz_scan_point:NNn {NNV}
 %    \end{macrocode}
 %
+% \begingroup
+% \catcode`_=12
 % \begin{macro}{\save_nodes:Nn}
 % This is the command that actually does the work.  It constructs a
 % token list which contains the code that will restore the node data
@@ -1562,7 +1566,7 @@ and the derived files           tikzmark.ins,
 }
 %    \end{macrocode}  
 % \end{macro}
-%
+% \endgroup
 %    \begin{macrocode}
 \ExplSyntaxOff
 %    \end{macrocode}  
