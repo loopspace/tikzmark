@@ -36,7 +36,7 @@ See http://www.latex-project.org/lppl.txt
 \endpreamble
 \postamble
 
-Copyright (C) 2011-2016 by Andrew Stacey <loopspace@mathforge.org>
+Copyright (C) 2011-2018 by Andrew Stacey <loopspace@mathforge.org>
 
 This work may be distributed and/or modified under the
 conditions of the LaTeX Project Public License (LPPL), either
@@ -201,7 +201,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{900}
+% \CheckSum{919}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -226,13 +226,14 @@ and the derived files           tikzmark.ins,
 % \changes{1.3}{2017/06/01}{Tikzmark no longer uses semi-colon (too many issues with catcodes) and fix for beamer-awareness}
 % \changes{1.4}{2017/10/29}{Bug fixes: spurious characters in aux file, tikzmark prefix/suffix ignored in iftikzmark test}
 % \changes{1.5}{2018/09/09}{Reintroduced the original command (now as tikzmarknode) with a mathchoice hack for different math modes}
+% \changes{1.6}{2019/10/18}{Added the ability to save node information between runs and between TeX documents}
 %
 % \DoNotIndex{\newcommand,\newenvironment}
 %
 % \providecommand*{\url}{\texttt}
 % \title{The \textsf{tikzmark} package}
 % \author{Andrew Stacey \\ \url{loopspace@mathforge.org}}
-% \date{v1.5~from 2018/09/09}
+% \date{v1.6~from 2018/10/18}
 %
 %
 % \maketitle
@@ -398,6 +399,8 @@ and the derived files           tikzmark.ins,
 %
 % This is a more basic form of the \Verb+\tikzmark+ which doesn't use any of the \Verb+\tikz+ overhead.
 % One advantage of this command is that it doesn't create an \Verb+hbox+.
+% It does, however, insert a \Verb+whatsit+ into the stream so it will, for example, stop two vertical spaces either side of it being merged.
+% This can't be avoided.
 % 
 % If the \Verb+beamer+ class is loaded then this command is made overlay-aware.
 %
@@ -410,6 +413,16 @@ and the derived files           tikzmark.ins,
 %
 % This is a reincarnation of the original \Verb+\tikzmark+ command which places its contents inside a \Verb+\tikz+ node.  It also defines a \Verb+tikzmark+ with the same name.  Using a sneaky trick with \Verb+\mathchoice+, it works inside a math environment.  The spacing either side might not be quite right as although it detects the math style it doesn't got beyond that. The \Verb+options+ are passed to the node.
 %
+% Two styles are attempted, one on the surrounding picture and one on the node, which are:
+%
+% \begin{itemize}
+% \item \Verb+every tikzmarknode picture+
+% \item \Verb+every tikzmarknode+
+% \end{itemize}
+%
+% To refer to the \emph{node}, use usual TikZ coordinates.
+% To refer to the underlying \emph{tikzmark}, use the special tikzmark coordinates (see below).
+%
 % \item \Verb+(pic cs:<name>)+ or \Verb+(pic cs:<name>,<coordinate>)+
 %
 % This is the method for referring to a position remembered by \Verb+\tikzmark+ (or \Verb+\pgfmark+) as a coordinate in a \Verb+tikzpicture+ environment (or \Verb+\tikz+ command).
@@ -418,7 +431,7 @@ and the derived files           tikzmark.ins,
 % \item \Verb+/tikz/save picture id=<name>+
 %
 % This is the TikZ key that is used by \Verb+\tikzmark+ to actually save the connection between the name and the picture coordinate.
-% It can be used on an arbitrary picture to save its origin.
+% It can be used on an arbitrary picture to save its origin as a tikzmark.
 %
 % \item \Verb+/tikz/if picture id=#1#2#3+
 %
@@ -464,11 +477,14 @@ and the derived files           tikzmark.ins,
 % The simplest way to turn a pseudo-node into a more normal node is to use the \Verb+fit+ library.
 % Using the above example, \Verb+\node[fit=(a),draw,inner sep=0pt] {};+ would draw a rectangle around the word \Verb+sub+ of exactly the same size as would appear had a normal node been created.
 %
-% \item The node saving system takes the information stored about a node and saves it for later use.
+% \item \emph{Node saving}
+%
+% The node saving system takes the information stored about a node and saves it for later use.
 % That later use can be in the same document, in which case it should be saved just to the memory of the current TeX process, or it can be used earlier in the same document or another document altogether (in particular, if the nodes are defined in a \Verb+tikzpicture+ that has been externalised, this can be used to import the node information into the main file) in which cases the node data is saved to a file.
 %
-% Nodes are saved and restored in groups which are named.
-% If the node information is saved to a file, loading it from the file does not automatically define the nodes but rather stores it in TeX's memory so that it can be restored as required.
+% When working with files, nodes are saved and restored in bulk.
+% When working in memory, nodes are saved and restored in named lists.
+% Nodes are not actually saved until the end of the tikzpicture in which they are defined, meaning that if saving to memory then all the nodes in a tikzpicture will belong to the same list.
 %
 % The keys for working with saving and restoring nodes are as follows.
 %
@@ -491,10 +507,16 @@ and the derived files           tikzmark.ins,
 %
 % This is a \Verb+true/false+ key which determines whether to save the node information to a file.
 %
+% \item \Verb+set saved nodes file name=<name>+
+%
+% This sets the file name for the saved nodes (the extension will be \Verb+.nodes+.
+% The default is to use the current \TeX\ filename.
+% This is set globally, and once the file is opened then changing the name will have no effect.
+% (The file is not opened until it is actually needed to avoid creating empty files unnecessarily.)
+%
 % \item \Verb+restore nodes from file=<name>+
 %
 % This loads the node information from the file into the current document.
-% They need to be further loaded into a given \Verb+tikzpicture+ using the key \Verb+restore nodes from list+.
 %
 % The \Verb+<name>+ can have the syntax \Verb+[options]{name}+, where \Verb+options+ can be used to influence how the nodes are restored.
 % The key \Verb+transform saved nodes+ (see below) can be given here.
@@ -649,7 +671,11 @@ and the derived files           tikzmark.ins,
 %
 % \subsection{Code Listings}
 %
-% If the \Verb+listings+ package has been loaded then issuing \Verb+\usetikzmarklibrary{listings}+ will load in some code to add marks to \Verb+lstlisting+ environments.
+% If the \Verb+listings+ package has been loaded then issuing
+%
+% \Verb+\usetikzmarklibrary{listings}+
+%
+% \noindent will load in some code to add marks to \Verb+lstlisting+ environments.
 % This code places a mark at three places on a line of code in a \Verb+listings+ environment.
 % The marks are placed at the start of the line, the first non-whitespace character, and the end of the line (if the line is blank the latter two are not placed).
 % (This has not been extensively tested, it works by adding code to various ``hooks'' that are made available by the \Verb+listings+ package; it is quite possible that the hooks chosen are both wrong and insufficient to cover all desired cases.)
@@ -752,7 +778,10 @@ and the derived files           tikzmark.ins,
       \ifpgfrememberpicturepositiononpage%
       \edef\pgf@temp{%
         \noexpand\write\noexpand\pgfutil@auxout{%
-        \string\savepicturepage{\pgfpictureid}{\noexpand\arabic{page}}}}%
+          \string\savepicturepage%
+          {\pgfpictureid}{\noexpand\arabic{page}}%
+        }%
+      }%
       \pgf@temp
       \fi%
     },
@@ -762,7 +791,8 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
   save picture id/.code={%
       \protected@write\pgfutil@auxout{}{%
-        \string\savepointas{\tikzmark@pp@name{#1}}{\pgfpictureid}{0pt}{0pt}}%
+      \string\savepointas%
+      {\tikzmark@pp@name{#1}}{\pgfpictureid}{0pt}{0pt}}%
   },
 %    \end{macrocode}
 % Provides a way to test if a picture has already been saved (in particular, can avoid errors on first runs)
@@ -804,7 +834,11 @@ and the derived files           tikzmark.ins,
 %
 % \begin{macro}{\tikzmark@pp@name}
 %    \begin{macrocode}
-\def\tikzmark@pp@name#1{\csname pgfk@/tikz/tikzmark prefix\endcsname#1\csname pgfk@/tikz/tikzmark suffix\endcsname}%
+\def\tikzmark@pp@name#1{%
+  \csname pgfk@/tikz/tikzmark prefix\endcsname%
+  #1%
+  \csname pgfk@/tikz/tikzmark suffix\endcsname%
+}%
 %    \end{macrocode}
 % \end{macro}
 %
@@ -813,7 +847,8 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \def\savepointas#1#2#3#4{%
   \expandafter\gdef\csname save@pt@#1\endcsname{#2}%
-  \expandafter\gdef\csname save@pt@#1@offset\endcsname{\pgfqpoint{#3}{#4}}%
+  \expandafter\gdef\csname save@pt@#1@offset\endcsname%
+  {\pgfqpoint{#3}{#4}}%
 }
 \def\savepicturepage#1#2{%
   \expandafter\gdef\csname save@pg@#1\endcsname{#2}%
@@ -844,26 +879,32 @@ and the derived files           tikzmark.ins,
   \@ifundefined{save@pt@\tmk@label}{%
     \tikz@scan@one@point\pgfutil@firstofone\tmk@def
   }{%
-      \pgfsys@getposition{\csname save@pt@\tmk@label\endcsname}\save@orig@pic%
-      \pgfsys@getposition{\pgfpictureid}\save@this@pic%
-      \pgf@process{\pgfpointorigin\save@this@pic}%
-      \pgf@xa=\pgf@x
-      \pgf@ya=\pgf@y
-      \pgf@process{\pgfpointorigin\save@orig@pic}%
-      \advance\pgf@x by -\pgf@xa
-      \advance\pgf@y by -\pgf@ya
-      \pgf@xa=\pgf@x
-      \pgf@ya=\pgf@y
-    \pgf@process{\pgfpointorigin\csname save@pt@\tmk@label @offset\endcsname}%
+    \pgfsys@getposition{\csname save@pt@\tmk@label\endcsname}%
+    \save@orig@pic%
+    \pgfsys@getposition{\pgfpictureid}\save@this@pic%
+    \pgf@process{\pgfpointorigin\save@this@pic}%
+    \pgf@xa=\pgf@x
+    \pgf@ya=\pgf@y
+    \pgf@process{\pgfpointorigin\save@orig@pic}%
+    \advance\pgf@x by -\pgf@xa
+    \advance\pgf@y by -\pgf@ya
+    \pgf@xa=\pgf@x
+    \pgf@ya=\pgf@y
+    \pgf@process%
+    {\pgfpointorigin\csname save@pt@\tmk@label @offset\endcsname}%
     \advance\pgf@xa by \pgf@x
     \advance\pgf@ya by \pgf@y
       \@ifundefined{save@pg@\csname save@pt@\tmk@label\endcsname}{}{%
         \@ifundefined{save@pg@\pgfpictureid}{}{%
           \pgfkeysvalueof{/tikz/next page vector}%
-          \advance \pgf@xa by \csname save@pg@\csname save@pt@\tmk@label\endcsname\endcsname\pgf@x\relax
-\advance \pgf@ya by \csname save@pg@\csname save@pt@\tmk@label\endcsname\endcsname\pgf@y\relax
-          \advance \pgf@xa by -\csname save@pg@\pgfpictureid\endcsname\pgf@x\relax
-\advance \pgf@ya by -\csname save@pg@\pgfpictureid\endcsname\pgf@y\relax
+        \advance \pgf@xa by %
+        \csname save@pg@\csname save@pt@\tmk@label\endcsname\endcsname\pgf@x\relax
+        \advance \pgf@ya by %
+        \csname save@pg@\csname save@pt@\tmk@label\endcsname\endcsname\pgf@y\relax
+        \advance \pgf@xa by %
+        -\csname save@pg@\pgfpictureid\endcsname\pgf@x\relax
+        \advance \pgf@ya by %
+        -\csname save@pg@\pgfpictureid\endcsname\pgf@y\relax
         }%
       }%
       \pgf@x=\pgf@xa
@@ -929,8 +970,12 @@ and the derived files           tikzmark.ins,
 % \begin{macro}{\tikzmark<>}
 %    \begin{macrocode}
 \@ifclassloaded{beamer}{
-  \renewcommand<>{\tikzmark@outside}[2][]{\only#3{\beameroriginal{\tikzmark@outside}[{#1}]{#2}}}
-  \renewcommand<>{\tikzmark@inside}[2]{\only#3{\beameroriginal{\tikzmark@inside}{#1}{#2}}}
+  \renewcommand<>{\tikzmark@outside}[2][]{%
+    \only#3{\beameroriginal{\tikzmark@outside}[{#1}]{#2}}%
+  }
+  \renewcommand<>{\tikzmark@inside}[2]{%
+    \only#3{\beameroriginal{\tikzmark@inside}{#1}{#2}}%
+  }
 }{}
 %    \end{macrocode}
 % \end{macro}
@@ -966,6 +1011,7 @@ and the derived files           tikzmark.ins,
 % \end{macro}
 %
 % \begin{macro}{\subnode}
+% Note: much of this code was inevitably adapted from the node defining code in the TikZ/PGF sources.
 %    \begin{macrocode}
 \newcommand\subnode[3][]{%
   \begingroup
@@ -1005,9 +1051,12 @@ and the derived files           tikzmark.ins,
       \ifx\pgf@node@name\pgfutil@empty%
       \else%
         \expandafter\xdef\csname pgf@sh@ns@\pgf@node@name\endcsname{\tikz@shape}%
-        \edef\pgf@sh@@temp{\noexpand\gdef\expandafter\noexpand\csname pgf@sh@np@\pgf@node@name\endcsname}%
-        \expandafter\pgf@sh@@temp\expandafter{\pgf@sh@savedpoints}%
-        \edef\pgf@sh@@temp{\noexpand\gdef\expandafter\noexpand\csname pgf@sh@ma@\pgf@node@name\endcsname}% MW
+      \edef\pgf@sh@@temp{%
+        \noexpand\gdef\expandafter\noexpand\csname pgf@sh@np@\pgf@node@name\endcsname}%
+      \expandafter\pgf@sh@@temp\expandafter{%
+        \pgf@sh@savedpoints}%
+      \edef\pgf@sh@@temp{%
+        \noexpand\gdef\expandafter\noexpand\csname pgf@sh@ma@\pgf@node@name\endcsname}% MW
         \expandafter\pgf@sh@@temp\expandafter{\pgf@sh@savedmacros}% MW
         \pgfgettransform\pgf@temp
         \expandafter\xdef\csname pgf@sh@nt@\pgf@node@name\endcsname{\pgf@temp}%
@@ -1028,7 +1077,20 @@ and the derived files           tikzmark.ins,
 % It does its best to work inside a math environment by a sneaky trick involving \Verb+\mathchoice+: the \Verb+remember picture+ key means that only the picture id of the typeset box is saved to the aux file.  So comparing the possible picture ids of the four options with the one read from the aux file, we can figure out which box was actually used.
 %    \begin{macrocode}
 \def\tikzmarknode@#1#2#3{%
-  \tikz[remember picture,baseline=(#2.base),save picture id={#2}] {\node[anchor=base,inner sep=0pt,name={#2},node contents={#3},#1]}%
+  \tikz[%
+    remember picture,
+    baseline=(#2.base),
+    save picture id={#2},
+    every tikzmarknode picture/.try
+  ] {
+    \node[
+      anchor=base,
+      inner sep=0pt,
+      name={#2},
+      node contents={#3},
+      every tikzmarknode/.try,
+      #1
+  ]}%
 }
 
 \newcommand\tikzmarknode[3][]{%
@@ -1075,7 +1137,9 @@ and the derived files           tikzmark.ins,
 %
 % \begin{macro}{\usetikzmarklibrary}
 %    \begin{macrocode}
-\def\usetikzmarklibrary{\pgfutil@ifnextchar[{\use@tikzmarklibrary}{\use@@tikzmarklibrary}}%}
+\def\usetikzmarklibrary{%
+  \pgfutil@ifnextchar[{\use@tikzmarklibrary}{\use@@tikzmarklibrary}%
+  }%}
 \def\use@tikzmarklibrary[#1]{\use@@tikzmarklibrary{#1}}
 \def\use@@tikzmarklibrary#1{%
   \edef\pgf@list{#1}%
@@ -1084,7 +1148,8 @@ and the derived files           tikzmark.ins,
     \ifx\pgf@temp\pgfutil@empty
     \else
       \expandafter\ifx\csname tikzmark@library@\pgf@temp @loaded\endcsname\relax%
-      \expandafter\global\expandafter\let\csname tikzmark@library@\pgf@temp @loaded\endcsname=\pgfutil@empty%
+      \expandafter\global\expandafter\let%
+      \csname tikzmark@library@\pgf@temp @loaded\endcsname=\pgfutil@empty%
       \expandafter\edef\csname tikzmark@library@#1@atcode\endcsname{\the\catcode`\@}
       \expandafter\edef\csname tikzmark@library@#1@barcode\endcsname{\the\catcode`\|}
       \catcode`\@=11
@@ -1158,12 +1223,14 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}    
 \iow_new:N \g__sn_stream
 \bool_new:N \g__sn_stream_bool
+\tl_new:N \g__sn_filename_tl
+\tl_set:Nx \g__sn_filename_tl {\c_sys_jobname_str}    
 
 \cs_new_nopar:Npn \sn_open_stream:
 {
   \bool_if:NF \g__sn_stream_bool
   {
-    \iow_open:Nn \g__sn_stream {\jobname.nodes}
+    \iow_open:Nn \g__sn_stream {\tl_use:N \g__sn_filename_tl .nodes}
     \bool_gset_true:N \g__sn_stream_bool
   }
 }
@@ -1222,7 +1289,9 @@ and the derived files           tikzmark.ins,
   \tikz_scan_point:NNn \l__sn_x_dim \l__sn_y_dim {(current~ bounding~ box.center)}
   \dim_set:Nn \l__sn_x_dim {-\l__sn_x_dim}
   \dim_set:Nn \l__sn_y_dim {-\l__sn_y_dim}
-  \tl_set:Nx \l__sn_centre_tl {{1}{0}{0}{1}{\dim_use:N \l__sn_x_dim}{\dim_use:N \l__sn_y_dim}}
+  \tl_set:Nx \l__sn_centre_tl {
+    {1}{0}{0}{1}{\dim_use:N \l__sn_x_dim}{\dim_use:N \l__sn_y_dim}
+  }
 %    \end{macrocode}  
 % Iterate over the list of node names
 %    \begin{macrocode}
@@ -1261,7 +1330,9 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
         \tl_if_exist:cTF {pgf@sh@####1@##1}
         {
-          \tl_put_right:Nx \l__sn_tmpa_tl {{\exp_not:v {pgf@sh@####1@ \tikz_set_node_name:n {##1}}}}
+          \tl_put_right:Nx \l__sn_tmpa_tl {
+            {\exp_not:v {pgf@sh@####1@ \tikz_set_node_name:n {##1}}}
+          }
         }
         {
           \tl_put_right:Nx \l__sn_tmpa_tl {{}}
@@ -1273,7 +1344,11 @@ and the derived files           tikzmark.ins,
       }
       \compose_transformations:NVv \l__sn_tmpb_tl \l__sn_centre_tl {pgf@sh@nt@##1}
       \tl_put_right:Nx \l__sn_tmpa_tl {{\exp_not:V \l__sn_tmpb_tl}}
-      \tl_put_right:Nn \l__sn_tmpa_tl {\transform_node:Nn \l__sn_transformation_tl {\tikz_set_node_name:n{##1}} }
+      \tl_put_right:Nn \l__sn_tmpa_tl {
+        \transform_node:Nn \l__sn_transformation_tl {
+          \tikz_set_node_name:n{##1}
+        }
+      }
     }
   }
 %    \end{macrocode}  
@@ -1448,7 +1523,9 @@ and the derived files           tikzmark.ins,
   \dim_set:Nn \l__sn_x_dim {\l__sn_x_dim - \tl_item:cn {pgf@sh@nt@#1}{5}}
   \dim_set:Nn \l__sn_y_dim {\l__sn_y_dim - \tl_item:cn {pgf@sh@nt@#1}{6}}
     
-  \compose_transformations:NnV  \l__sn_transformation_tl {{1}{0}{0}{1}{\dim_use:N \l__sn_x_dim}{\dim_use:N \l__sn_y_dim}} \l__sn_transformation_tl
+  \compose_transformations:NnV  \l__sn_transformation_tl {
+    {1}{0}{0}{1}{\dim_use:N \l__sn_x_dim}{\dim_use:N \l__sn_y_dim}
+  } \l__sn_transformation_tl
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1460,6 +1537,9 @@ and the derived files           tikzmark.ins,
 % Set the TikZ keys for access to the above commands.
 %    \begin{macrocode}
 \tikzset{
+  set~ saved~ nodes~ file~ name/.code={
+    \tl_gset:Nx \g__sn_filename_tl {#1}    
+  },
   transform~ saved~ nodes/.code={
     \set_transform_from_node:v {tikz@last@fig@name}
   },
