@@ -201,7 +201,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{919}
+% \CheckSum{929}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -940,7 +940,12 @@ and the derived files           tikzmark.ins,
   \ifx\pgfpictureid\@undefined
   \let\tikzmark@next=\tikzmark@outside
   \else
+  \relax
+  \ifx\scope\tikz@origscope\relax
+  \let\tikzmark@next=\tikzmark@outside
+  \else
   \let\tikzmark@next=\tikzmark@inside
+  \fi
   \fi
   \tikzmark@next%
 }
