@@ -477,6 +477,8 @@ and the derived files           tikzmark.ins,
 % The simplest way to turn a pseudo-node into a more normal node is to use the \Verb+fit+ library.
 % Using the above example, \Verb+\node[fit=(a),draw,inner sep=0pt] {};+ would draw a rectangle around the word \Verb+sub+ of exactly the same size as would appear had a normal node been created.
 %
+% Using a sneaky trick with \Verb+\mathchoice+, \Verb+subnode+ works inside a math environment.  The spacing either side might not be quite right as although it detects the math style it doesn't got beyond that.
+%
 % \item \emph{Node saving}
 %
 % The node saving system takes the information stored about a node and saves it for later use.
