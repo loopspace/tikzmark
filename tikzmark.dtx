@@ -201,7 +201,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{929}
+% \CheckSum{1007}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -1018,12 +1018,10 @@ and the derived files           tikzmark.ins,
 % \begin{macro}{\subnode}
 % Note: much of this code was inevitably adapted from the node defining code in the TikZ/PGF sources.
 %    \begin{macrocode}
-\newcommand\subnode[3][]{%
+\def\subnode@#1#2#3{%
   \begingroup
   \pgfmark{#2}%
   \setbox\pgfnodeparttextbox=\hbox\bgroup #3\egroup
-  \def\tikz@shape{rectangle}%
-  \def\tikz@anchor{center}%
   \def\tikz@fig@name{#2}%
   \tikzset{every subnode/.try,#1}%
   \pgfpointorigin
@@ -1033,46 +1031,82 @@ and the derived files           tikzmark.ins,
   \advance\pgf@y by -.5\dp\pgfnodeparttextbox
   \pgftransformshift{}%
   \setbox\@tempboxa=\hbox\bgroup
-  \pgfutil@ifundefined{pgf@sh@s@\tikz@shape}%
-  {\PackageError{pgf}{Unknown shape ``\tikz@shape''}{}}%
   {%
-    {%
-      \let\pgf@sh@savedmacros=\pgfutil@empty% MW
-      \let\pgf@sh@savedpoints=\pgfutil@empty%
-      \def\pgf@sm@shape@name{\tikz@shape}% CJ % TT added prefix!
-      \csname pgf@sh@s@\tikz@shape\endcsname%
-      \pgf@sh@savedpoints%
-      \pgf@sh@savedmacros% MW
-      \pgftransformshift{%
-        \pgf@sh@reanchor{\tikz@shape}{\tikz@anchor}%
-        \pgf@x=-\pgf@x%
-        \pgf@y=-\pgf@y%
-      }%
-      \expandafter\pgfsavepgf@process\csname pgf@sh@sa@\tikz@fig@name\endcsname{%
-      	\pgf@sh@reanchor{\tikz@shape}{\tikz@anchor}% FIXME : this is double work!
-      }%
-      % Save the saved points and the transformation matrix
-      \edef\pgf@node@name{\tikz@fig@name}%
-      \ifx\pgf@node@name\pgfutil@empty%
-      \else%
-        \expandafter\xdef\csname pgf@sh@ns@\pgf@node@name\endcsname{\tikz@shape}%
-      \edef\pgf@sh@@temp{%
-        \noexpand\gdef\expandafter\noexpand\csname pgf@sh@np@\pgf@node@name\endcsname}%
-      \expandafter\pgf@sh@@temp\expandafter{%
-        \pgf@sh@savedpoints}%
-      \edef\pgf@sh@@temp{%
-        \noexpand\gdef\expandafter\noexpand\csname pgf@sh@ma@\pgf@node@name\endcsname}% MW
-        \expandafter\pgf@sh@@temp\expandafter{\pgf@sh@savedmacros}% MW
-        \pgfgettransform\pgf@temp
-        \expandafter\xdef\csname pgf@sh@nt@\pgf@node@name\endcsname{\pgf@temp}%
-        \expandafter\xdef\csname pgf@sh@pi@\pgf@node@name\endcsname{\pgfpictureid}%
-      \fi%
+    \let\pgf@sh@savedmacros=\pgfutil@empty% MW
+    \let\pgf@sh@savedpoints=\pgfutil@empty%
+    \def\pgf@sm@shape@name{rectangle}% CJ % TT added prefix!
+    \pgf@sh@s@rectangle%
+    \pgf@sh@savedpoints%
+    \pgf@sh@savedmacros% MW
+    \pgftransformshift{%
+      \pgf@sh@reanchor{rectangle}{center}%
+      \pgf@x=-\pgf@x%
+      \pgf@y=-\pgf@y%
     }%
+    \expandafter\pgfsavepgf@process\csname pgf@sh@sa@\tikz@fig@name\endcsname{%
+      \pgf@sh@reanchor{rectangle}{center}% FIXME : this is double work!
+    }%
+    % Save the saved points and the transformation matrix
+    \edef\pgf@node@name{\tikz@fig@name}%
+    \ifx\pgf@node@name\pgfutil@empty%
+    \else%
+    \expandafter\xdef\csname pgf@sh@ns@\pgf@node@name\endcsname{rectangle}%
+    \edef\pgf@sh@@temp{%
+      \noexpand\gdef\expandafter\noexpand\csname pgf@sh@np@\pgf@node@name\endcsname}%
+    \expandafter\pgf@sh@@temp\expandafter{%
+      \pgf@sh@savedpoints}%
+    \edef\pgf@sh@@temp{%
+      \noexpand\gdef\expandafter\noexpand\csname pgf@sh@ma@\pgf@node@name\endcsname}% MW
+    \expandafter\pgf@sh@@temp\expandafter{\pgf@sh@savedmacros}% MW
+    \pgfgettransform\pgf@temp
+    \expandafter\xdef\csname pgf@sh@nt@\pgf@node@name\endcsname{\pgf@temp}%
+    \expandafter\xdef\csname pgf@sh@pi@\pgf@node@name\endcsname{\pgfpictureid}%
+    \fi%
   }%
   \egroup
   \box\pgfnodeparttextbox
   \endgroup
 }
+
+\newcommand\subnode[3][]{%
+  \ifmmode
+  \mathchoice{%
+    \subnode@{#1}{#2-d}{\(\displaystyle #3\)}%
+  }{%
+    \subnode@{#1}{#2-t}{\(\textstyle #3\)}%
+  }{%
+    \subnode@{#1}{#2-s}{\(\scriptstyle #3\)}%
+  }{%
+    \subnode@{#1}{#2-ss}{\(\scriptscriptstyle #3\)}%
+  }%
+  \let\pgf@nodecallback\pgfutil@gobble
+  \def\tzmk@prfx{pgf@sys@pdf@mark@pos@pgfid}%
+  \edef\tzmk@pic{\tzmk@prfx\the\pgf@picture@serial@count}
+  \expandafter\ifx\csname\tzmk@pic\endcsname\relax
+  \edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-1\relax}%
+  \expandafter\ifx\csname\tzmk@pic\endcsname\relax
+\edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-2\relax}%
+  \expandafter\ifx\csname\tzmk@pic\endcsname\relax
+\edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-3\relax}%
+  \expandafter\ifx\csname\tzmk@pic\endcsname\relax
+    \pgfnodealias{#2}{#2-t}%  %% Fallback
+  \else
+    \pgfnodealias{#2}{#2-d}%
+  \fi
+  \else
+    \pgfnodealias{#2}{#2-t}%
+  \fi
+  \else
+    \pgfnodealias{#2}{#2-s}%
+  \fi
+  \else
+    \pgfnodealias{#2}{#2-ss}%
+  \fi
+  \else
+    \subnode@{#1}{#2}{#3}%
+  \fi
+}
+
 %    \end{macrocode}
 % \end{macro}
 %

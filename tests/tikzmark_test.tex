@@ -151,6 +151,44 @@ Testing box sizes:
 \node[fit=(m),draw,inner sep=0pt] {};
 \end{tikzpicture}
 
+Testing maths:
+
+\begin{itemize}
+\item Display style
+\begin{tikzpicture}[remember picture,baseline=-1]
+\node {\(\displaystyle S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\node at (0,-1.5) {\(\displaystyle S_n = \subnode{a}{\sum_{k=0}^n r^k} = \frac{r^{n+1} - 1}{r-1} \)};
+\draw[->] (a.south east) to[bend left] (a.south west);
+\node[fit=(a),draw,inner sep=0pt,node contents={}];
+\end{tikzpicture}
+
+\item Text style
+\begin{tikzpicture}[remember picture,baseline=-1]
+\node {\(S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\node at (0,-1.5) {\(S_n = \subnode{a}{\sum_{k=0}^n r^k} = \frac{r^{n+1} - 1}{r-1} \)};
+\draw[->] (a.south east) to[bend left] (a.south west);
+\node[fit=(a),draw,inner sep=0pt,node contents={}];
+\end{tikzpicture}
+
+\item Script style
+\begin{tikzpicture}[remember picture,baseline=-1]
+\node {\(S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\node at (0,-1.5) {\(S_n = \sum_{k=0}^{\subnode{a}{n}} r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\draw[->] (a.south east) to[bend left] (a.south west);
+\node[fit=(a),draw,inner sep=0pt,node contents={}];
+\end{tikzpicture}
+
+\item Script script style
+\begin{tikzpicture}[remember picture,baseline=-1]
+\node {\(\scriptstyle S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\node at (0,-1.5) {\(\scriptstyle S_n = \sum_{k=0}^{\subnode{a}{n}} r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\draw[->] (a.south east) to[bend left] (a.south west);
+\node[fit=(a),draw,inner sep=0pt,node contents={}];
+\end{tikzpicture}
+
+\end{itemize}
+
+\newpage
 
 \section{Listings Tests}
 
