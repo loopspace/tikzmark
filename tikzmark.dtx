@@ -858,6 +858,16 @@ and the derived files           tikzmark.ins,
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}{\tikzmarkalias}
+% Alias a tikzmark to another name (used in tikzmarknode)
+%    \begin{macrocode}
+\def\tikzmarkalias#1#2{%
+  \pgf@node@gnamelet{save@pt@#1}{save@pt@#2}%
+  \pgf@node@gnamelet{save@pt@#1@offset}{save@pt@#2@offset}%
+}
+%    \end{macrocode}
+% \end{macro}
+%
 % \begin{macro}{\tmk@labeldef}
 % Auxiliary command for the coordinate system.
 %    \begin{macrocode}
@@ -1091,18 +1101,22 @@ and the derived files           tikzmark.ins,
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
 \edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-3\relax}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
-    \pgfnodealias{#2}{#2-t}%  %% Fallback
+%    \pgfnodealias{#2}{#2-t}%  %% Fallback
   \else
     \pgfnodealias{#2}{#2-d}%
+    \tikzmarkalias{#2}{#2-d}%
   \fi
   \else
     \pgfnodealias{#2}{#2-t}%
+    \tikzmarkalias{#2}{#2-t}%
   \fi
   \else
     \pgfnodealias{#2}{#2-s}%
+    \tikzmarkalias{#2}{#2-s}%
   \fi
   \else
     \pgfnodealias{#2}{#2-ss}%
+    \tikzmarkalias{#2}{#2-ss}%
   \fi
   \else
     \subnode@{#1}{#2}{#3}%
@@ -1147,7 +1161,7 @@ and the derived files           tikzmark.ins,
   }%
   \let\pgf@nodecallback\pgfutil@gobble
   \def\tzmk@prfx{pgf@sys@pdf@mark@pos@pgfid}%
-  \edef\tzmk@pic{\tzmk@prfx\the\pgf@picture@serial@count}
+  \edef\tzmk@pic{\tzmk@prfx\the\pgf@picture@serial@count}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
   \edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-1\relax}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
@@ -1155,18 +1169,22 @@ and the derived files           tikzmark.ins,
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
 \edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-3\relax}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
-    \pgfnodealias{#2}{#2-t}%  %% Fallback
+  % No fallback due to potential nested mathchoices
   \else
     \pgfnodealias{#2}{#2-d}%
+    \tikzmarkalias{#2}{#2-d}%
   \fi
   \else
     \pgfnodealias{#2}{#2-t}%
+    \tikzmarkalias{#2}{#2-t}%
   \fi
   \else
     \pgfnodealias{#2}{#2-s}%
+    \tikzmarkalias{#2}{#2-s}%
   \fi
   \else
     \pgfnodealias{#2}{#2-ss}%
+    \tikzmarkalias{#2}{#2-ss}%
   \fi
   \else
     \tikzmarknode@{#1}{#2}{#3}%
