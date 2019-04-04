@@ -1283,7 +1283,7 @@ and the derived files           tikzmark.ins,
 \iow_new:N \g__sn_stream
 \bool_new:N \g__sn_stream_bool
 \tl_new:N \g__sn_filename_tl
-\tl_set:Nx \g__sn_filename_tl {\c_sys_jobname_str}    
+\tl_gset:Nx \g__sn_filename_tl {\c_sys_jobname_str}    
 
 \cs_new_nopar:Npn \sn_open_stream:
 {
