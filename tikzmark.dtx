@@ -827,25 +827,33 @@ and the derived files           tikzmark.ins,
     next page vector={\pgfqpoint{0pt}{0pt}}%
   },
   if tikzmark on current page/.code n args={3}{%
-  \@ifundefined{save@pg@\csname save@pt@#1\endcsname}{%
+    \@ifundefined{save@pt@\tikzmark@pp@name{#1}}{%
       \pgfkeysalso{#3}%
     }{%
-      \ifnum\csname save@pg@\csname save@pt@#1\endcsname\endcsname=\the\value{page}\relax%
-        \pgfkeysalso{#2}%
-      \else
+      \@ifundefined{save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname}{%
         \pgfkeysalso{#3}%
-      \fi
+      }{%
+        \ifnum\csname save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname\endcsname=\the\value{page}\relax%
+        \pgfkeysalso{#2}%
+        \else
+        \pgfkeysalso{#3}%
+        \fi
+      }%
     }%
   },
   if tikzmark on page/.code n args={4}{%
-    \@ifundefined{save@pg@\csname save@pt@#1@label\endcsname}{%
+    \@ifundefined{save@pt@\tikzmark@pp@name{#1}}{%
       \pgfkeysalso{#4}%
     }{%
-      \ifnum\csname save@pg@\csname save@pt@#1\endcsname\endcsname=#2\relax%
-        \pgfkeysalso{#3}%
-      \else
+      \@ifundefined{save@pg@\csname save@pt@\tikzmark@pp@name{#1}@label\endcsname}{%
         \pgfkeysalso{#4}%
-      \fi
+      }{%
+        \ifnum\csname save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname\endcsname=#2\relax%
+        \pgfkeysalso{#3}%
+        \else
+        \pgfkeysalso{#4}%
+        \fi
+      }%
     }%
   },
 %    \end{macrocode}
@@ -1066,14 +1074,18 @@ and the derived files           tikzmark.ins,
 % \begin{macro}{\iftikzmarkonpage}
 %    \begin{macrocode}
 \newcommand\iftikzmarkonpage[2]{%
-  \@ifundefined{save@pg@\csname save@pt@#1@label\endcsname}{%
+  \@ifundefined{save@pt@\tikzmark@pp@name{#1}}{%
     \tikzmark@false
   }{%
-    \ifnum\csname save@pg@\csname save@pt@#1\endcsname\endcsname=#2\relax%
-      \tikzmark@true
-    \else
+    \@ifundefined{save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname}{%
       \tikzmark@false
-    \fi
+    }{%
+      \ifnum\csname save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname\endcsname=#2\relax%
+      \tikzmark@true
+      \else
+      \tikzmark@false
+      \fi
+    }%
   }%
   \iftikzmark@
 }
@@ -1083,14 +1095,18 @@ and the derived files           tikzmark.ins,
 % \begin{macro}{\iftikzmarkoncurrentpage}
 %    \begin{macrocode}
 \newcommand\iftikzmarkoncurrentpage[1]{%
-  \@ifundefined{save@pg@\csname save@pt@#1\endcsname}{%
+  \@ifundefined{save@pt@\tikzmark@pp@name{#1}}{%
     \tikzmark@false
   }{%
-    \ifnum\csname save@pg@\csname save@pt@#1\endcsname\endcsname=\the\value{page}\relax%
-      \tikzmark@true
-    \else
+    \@ifundefined{save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname}{%
       \tikzmark@false
-    \fi
+    }{%
+      \ifnum\csname save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname\endcsname=\the\value{page}\relax%
+      \tikzmark@true
+      \else
+      \tikzmark@false
+      \fi
+    }%
   }%
   \iftikzmark@
 }
