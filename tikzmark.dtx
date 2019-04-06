@@ -201,7 +201,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{1007}
+% \CheckSum{1113}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -406,8 +406,20 @@ and the derived files           tikzmark.ins,
 %
 % \item \Verb+\iftikzmark+\marg{name}\marg{true code}\marg{false code}
 %
-% This is a simple conditional to test if a particular mark is available.
+% This is a conditional to test if a particular mark is available.
 % It executes \Verb+true code+ if it is and \Verb+false code+ if not.
+%
+% \item \Verb+\iftikzmarkexists+\marg{name}
+%
+% This is a conditional to test if a particular mark is available which works with the lower level \TeX\ \Verb+\else+ and \Verb+\fi+.
+%
+% \item \Verb+\iftikzmarkoncurrentpage+\marg{name}
+%
+% This is a conditional to test if a particular mark is on the current page; it works with the lower level \TeX\ \Verb+\else+ and \Verb+\fi+.
+%
+% \item \Verb+\iftikzmarkonpage+\marg{name}\marg{page}
+%
+% This is a conditional to test if a particular mark is on a given page; it works with the lower level \TeX\ \Verb+\else+ and \Verb+\fi+.
 %
 % \item \Verb+\tikzmarknode+\oarg{options}\marg{name}\marg{contents}
 %
@@ -436,6 +448,15 @@ and the derived files           tikzmark.ins,
 % \item \Verb+/tikz/if picture id=#1#2#3+
 %
 % This is a key equivalent of the \Verb+\iftikzmark+ command.
+%
+% \item \Verb+/tikz/if tikzmark on current page=#1#2#3+
+%
+% This is a key equivalent of the \Verb+\iftikzmarkoncurrentpage+ command.
+% If true, the keys in \Verb+#2+ are executed, otherwise the keys in \Verb+#3+.
+%
+% \item \Verb+/tikz/if tikzmark on page=#1#2#3#4+
+%
+% This is a key equivalent of the \Verb+\iftikzmarkonpage+ command.
 %
 % \item \Verb+/tikz/next page+, \Verb+/tikz/next page vector+
 %
