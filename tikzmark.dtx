@@ -1248,6 +1248,7 @@ and the derived files           tikzmark.ins,
     \node[
       anchor=base,
       inner sep=0pt,
+      minimum width=0pt,
       name={#2},
       node contents={#3},
       every tikzmarknode/.try,
@@ -1371,6 +1372,17 @@ and the derived files           tikzmark.ins,
 % This boolean is for whether we save to a file or not.
 %    \begin{macrocode}
 \bool_new:N \l__sn_file_bool
+%    \end{macrocode}
+%
+% This boolean is for whether we are in the preamble or not.
+%    \begin{macrocode}
+\bool_new:N \g__sn_preamble_bool
+\bool_set_true:N \g__sn_preamble_bool
+%    \end{macrocode}
+%
+%    \begin{macrocode}    
+\msg_new:nnn {tikzmark} {no file} {File~ "#1"~ doesn't~ exist.}
+\msg_new:nnn {tikzmark} {loading nodes} {Loading~ nodes~ from~ "#1".}
 %    \end{macrocode}
 %
 % Dimensions and token lists for shifting
@@ -1544,8 +1556,7 @@ and the derived files           tikzmark.ins,
 {
   \save_nodes:Nn \l__sn_tmpa_tl {#1}
 %    \end{macrocode}  
-% Save the token list to the aux file so that on reading the aux
-% file, we restore the node definitions
+% Save the token list to the nodes file so that on reading it back in, we restore the node definitions
 %    \begin{macrocode}
   \sn_open_stream:
   \iow_now:Nx \g__sn_stream
@@ -1582,13 +1593,18 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \cs_new_nopar:Npn \restore_nodes_from_file:n #1
 {
-  \file_if_exist:nT {#1.nodes}
+  \file_if_exist:nTF {#1.nodes}
   {
+    \msg_log:nnn {tikzmark} {loading nodes} {#1}
     \ExplSyntaxOn
     \file_input:n {#1.nodes}
     \ExplSyntaxOff
   }
+  {
+    \msg_warning:nnn {tikzmark} {no file} {#1}
+  }
 }
+\AtBeginDocument{\bool_gset_false:N \g__sn_preamble_bool}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1750,16 +1766,23 @@ and the derived files           tikzmark.ins,
 % Restore nodes from file
 %    \begin{macrocode}
   restore~ nodes~ from~ file/.code={
-    \tikz_fig_must_be_named:
-    \pgfkeysalso{append~ after~ command={
-        \pgfextra{
-          \scope
-          \split_argument:NNn \tikzset \restore_nodes_from_file:n {#1}
-          \endscope
+    \bool_if:NTF \g__sn_preamble_bool
+    {
+      \restore_nodes_from_file:n {#1}
+    }
+    {
+      \tikz_fig_must_be_named:
+      \pgfkeysalso{append~ after~ command={
+          \pgfextra{
+            \scope
+            \split_argument:NNn \tikzset \restore_nodes_from_file:n {#1}
+            \endscope
+          }
         }
       }
     }
   },
+  restore~ nodes~ from~ file/.default = \g__sn_filename_tl,
 %    \end{macrocode}  
 % Restore nodes from list
 %    \begin{macrocode}
