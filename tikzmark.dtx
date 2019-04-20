@@ -960,22 +960,19 @@ and the derived files           tikzmark.ins,
       \@ifundefined{save@pg@\csname save@pt@\tmk@label\endcsname}{}{%
         \@ifundefined{save@pg@\pgfpictureid}{}{%
           \pgfkeysvalueof{/tikz/next page vector}%
+        \edef\tmk@pg{\the\numexpr \csname save@pg@\csname save@pt@\tmk@label\endcsname\endcsname - \csname save@pg@\pgfpictureid\endcsname\relax}%
         \advance \pgf@xa by %
-        \csname save@pg@\csname save@pt@\tmk@label\endcsname\endcsname\pgf@x\relax
+        \tmk@pg\pgf@x\relax
         \advance \pgf@ya by %
-        \csname save@pg@\csname save@pt@\tmk@label\endcsname\endcsname\pgf@y\relax
-        \advance \pgf@xa by %
-        -\csname save@pg@\pgfpictureid\endcsname\pgf@x\relax
-        \advance \pgf@ya by %
-        -\csname save@pg@\pgfpictureid\endcsname\pgf@y\relax
+        \tmk@pg\pgf@y\relax
         }%
       }%
       \pgf@x=\pgf@xa
       \pgf@y=\pgf@ya
     \pgftransforminvert
     \pgf@pos@transform{\pgf@x}{\pgf@y}%
-    }%
-  }
+  }%
+}
 %    \end{macrocode}
 % \end{macro}
 %
