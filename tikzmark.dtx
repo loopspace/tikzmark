@@ -1206,7 +1206,10 @@ and the derived files           tikzmark.ins,
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
 \edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-3\relax}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
-%    \pgfnodealias{#2}{#2-t}%  %% Fallback
+  \pgfutil@ifundefined{pgf@sh@ns@#2}{%
+    \pgfnodealias{#2}{#2-t}%
+    \tikzmarkalias{#2}{#2-t}%
+  }{}%
   \else
     \pgfnodealias{#2}{#2-d}%
     \tikzmarkalias{#2}{#2-d}%
@@ -1275,11 +1278,10 @@ and the derived files           tikzmark.ins,
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
 \edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-3\relax}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
-  % No fallback due to potential nested mathchoices
   \pgfutil@ifundefined{pgf@sh@ns@#2}{%
     \pgfnodealias{#2}{#2-t}%
     \tikzmarkalias{#2}{#2-t}%
-  }%
+  }{}%
   \else
     \pgfnodealias{#2}{#2-d}%
     \tikzmarkalias{#2}{#2-d}%
