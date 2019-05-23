@@ -201,7 +201,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{1119}
+% \CheckSum{1138}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -962,10 +962,14 @@ and the derived files           tikzmark.ins,
         \@ifundefined{save@pg@\pgfpictureid}{}{%
           \pgfkeysvalueof{/tikz/next page vector}%
         \edef\tmk@pg{\the\numexpr \csname save@pg@\csname save@pt@\tmk@label\endcsname\endcsname - \csname save@pg@\pgfpictureid\endcsname\relax}%
-        \advance \pgf@xa by %
-        \tmk@pg\pgf@x\relax
-        \advance \pgf@ya by %
-        \tmk@pg\pgf@y\relax
+        \ifnum \tmk@pg > 0 \relax
+        \advance \pgf@xa by \pgf@x\relax
+        \advance \pgf@ya by \pgf@y\relax
+        \fi
+        \ifnum \tmk@pg < 0 \relax
+        \advance \pgf@xa by -\pgf@x\relax
+        \advance \pgf@ya by -\pgf@y\relax
+        \fi
         }%
       }%
       \pgf@x=\pgf@xa
