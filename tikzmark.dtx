@@ -99,7 +99,7 @@ and the derived files           tikzmark.ins,
  
 \usepackage{listings}
 \lstloadlanguages{[LaTeX]TeX}
-\lstset{gobble=2,breakatwhitespace=true,breaklines=true,language=TeX}
+\lstset{gobble=2,breakatwhitespace=true,breaklines=true,language=TeX,basicstyle=\small\ttfamily,columns=flexible}
  
 \usepackage{fancyvrb}
 
@@ -112,8 +112,7 @@ and the derived files           tikzmark.ins,
    \begin{center}
 %   \setlength{\parindent}{0pt}
    \fbox{\begin{minipage}{.9\linewidth}
-     \lstset{breakatwhitespace=true,breaklines=true,language=TeX,basicstyle=\small}
-     \lstinputlisting[]{example.out}
+     \lstinputlisting{example.out}
    \end{minipage}}
 
    \fbox{\begin{minipage}{.9\linewidth}
@@ -129,8 +128,7 @@ and the derived files           tikzmark.ins,
    \begin{center}
 %   \setlength{\parindent}{0pt}
    \fbox{\begin{minipage}{.9\linewidth}
-     \lstset{breakatwhitespace=true,breaklines=true,language=TeX,basicstyle=\small}
-     \lstinputlisting[]{example.out}
+     \lstinputlisting{example.out}
    \end{minipage}}
 \end{center}
 }
@@ -342,7 +340,7 @@ and the derived files           tikzmark.ins,
 %
 % \begin{figure}
 % \centering
-% \IfFileExists{\includegraphics{tikzmarkExample}}{}
+% \IfFileExists{tikzmarkExample.pdf}{\includegraphics{tikzmarkExample}}{}
 % \caption{First use of tikzmark}
 % \label{fig:tikzmarkex}
 % \end{figure}
