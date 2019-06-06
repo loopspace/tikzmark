@@ -342,7 +342,7 @@ and the derived files           tikzmark.ins,
 %
 % \begin{figure}
 % \centering
-% \includegraphics{tikzmarkExample}
+% \IfFileExists{\includegraphics{tikzmarkExample}}{}
 % \caption{First use of tikzmark}
 % \label{fig:tikzmarkex}
 % \end{figure}
@@ -690,7 +690,7 @@ and the derived files           tikzmark.ins,
 % This produces:
 %
 % \begin{center}
-% \fbox{\includegraphics{tikzrefextnodes}}
+% \fbox{\IfFileExists{tikzrefextnodes.pdf}{\includegraphics{tikzrefextnodes}}{}}
 % \end{center}
 %
 % \subsection{Code Listings}
