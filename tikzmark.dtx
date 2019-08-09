@@ -465,6 +465,8 @@ and the derived files           tikzmark.ins,
 % Possible values are (by default) \Verb+above+, \Verb+below+, \Verb+left+, \Verb+right+, and \Verb+ignore+.
 % (The last one sets the vector to the zero vector.)
 %
+% Previous versions of \Verb+tikzmark+ tried to make this work correctly with the mark being on, say, \(5\) pages further on but this got too fiddly so this version just pretends that the mark is on the next or previous page and points to it as appropriate.
+%
 % \item \Verb+/tikz/tikzmark prefix=<prefix>+  and \Verb+/tikz/tikzmark suffix=<suffix>+
 %
 % These keys allow for the automatic addition of a prefix and/or suffix to each \Verb+\tikzmark+ name.
