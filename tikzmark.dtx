@@ -99,8 +99,15 @@ and the derived files           tikzmark.ins,
  
 \usepackage{listings}
 \lstloadlanguages{[LaTeX]TeX}
-\lstset{gobble=2,breakatwhitespace=true,breaklines=true,language=TeX,basicstyle=\small\ttfamily,columns=flexible}
- 
+ \lstset{
+  gobble=2,
+  breakatwhitespace=true,
+  breaklines=true,
+  language=[LaTeX]TeX,
+  basicstyle=\small\ttfamily,
+  keepspaces=true,
+  columns=fullflexible
+}
 \usepackage{fancyvrb}
 
 \usepackage[hyperindex=false]{hyperref}
