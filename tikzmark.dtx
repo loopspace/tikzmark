@@ -995,6 +995,7 @@ and the derived files           tikzmark.ins,
 % This version is for when we're outside a tikzpicture environment
 %    \begin{macrocode}
 \newcommand\tikzmark@outside[2][]{%
+\tikzset{external/export next/.try=false}%
 \tikz[remember picture with id=#2]{#1}%
 }
 %    \end{macrocode}
@@ -1252,6 +1253,7 @@ and the derived files           tikzmark.ins,
 % It does its best to work inside a math environment by a sneaky trick involving \Verb+\mathchoice+: the \Verb+remember picture+ key means that only the picture id of the typeset box is saved to the aux file.  So comparing the possible picture ids of the four options with the one read from the aux file, we can figure out which box was actually used.
 %    \begin{macrocode}
 \def\tikzmarknode@#1#2#3{%
+\tikzset{external/export next/.try=false}%
   \tikz[%
     remember picture,
     baseline=(#2.base),
