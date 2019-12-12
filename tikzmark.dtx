@@ -233,13 +233,14 @@ and the derived files           tikzmark.ins,
 % \changes{1.5}{2018/09/09}{Reintroduced the original command (now as tikzmarknode) with a mathchoice hack for different math modes}
 % \changes{1.6}{2018/10/18}{Added the ability to save node information between runs and between TeX documents}
 % \changes{1.7}{2019/05/07}{Added conditions to test if a tikzmark is on a particular page}
+% \changes{1.8}{2019/10/04}{Fixed some bugs with subnode and tikzmarknode inside maths}
 %
 % \DoNotIndex{\newcommand,\newenvironment}
 %
 % \providecommand*{\url}{\texttt}
 % \title{The \textsf{tikzmark} package}
 % \author{Andrew Stacey \\ \url{loopspace@mathforge.org}}
-% \date{v1.7~from 2019/05/07}
+% \date{v1.8~from 2019/10/04}
 %
 %
 % \maketitle
@@ -1885,8 +1886,10 @@ and the derived files           tikzmark.ins,
 %
 % \begin{macro}{\iflst@linemark}
 % A conditional to help with placing the mark at the first non-whitespace character.
+% Should be set to true so that we notice the first line of the code.
 %    \begin{macrocode}
-    \newif\iflst@linemark
+  \newif\iflst@linemark
+  \lst@linemarktrue
 %    \end{macrocode}
 % \end{macro}
 %
