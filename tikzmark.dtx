@@ -36,7 +36,7 @@ See http://www.latex-project.org/lppl.txt
 \endpreamble
 \postamble
 
-Copyright (C) 2011-2018 by Andrew Stacey <loopspace@mathforge.org>
+Copyright (C) 2011-2021 by Andrew Stacey <loopspace@mathforge.org>
 
 This work may be distributed and/or modified under the
 conditions of the LaTeX Project Public License (LPPL), either
@@ -206,7 +206,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{1138}
+% \CheckSum{1178}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -234,18 +234,19 @@ and the derived files           tikzmark.ins,
 % \changes{1.6}{2018/10/18}{Added the ability to save node information between runs and between TeX documents}
 % \changes{1.7}{2019/05/07}{Added conditions to test if a tikzmark is on a particular page}
 % \changes{1.8}{2019/10/04}{Fixed some bugs with subnode and tikzmarknode inside maths}
+% \changes{1.10}{2021/02/16}{Tikzmarknode is now prefix and suffix aware, and added a test to see if a picture id has been saved to the aux file for times when pictures are thrown away, eg in AMS's text command}
 %
 % \DoNotIndex{\newcommand,\newenvironment}
 %
+% \GetFileInfo{tikzlibrarytikzmark.code.tex}
 % \providecommand*{\url}{\texttt}
 % \title{The \textsf{tikzmark} package}
 % \author{Andrew Stacey \\ \url{loopspace@mathforge.org}}
-% \date{v1.8~from 2019/10/04}
+% \date{\fileversion~from \filedate}
 %
 %
 % \maketitle
 %
-% 
 % \section{Introduction}
 %
 % The \Verb+\tikzmark+ macro burst onto the scene in a blaze of glory on \href{http://tex.stackexchange.com}{TeX-SX}.
@@ -451,6 +452,23 @@ and the derived files           tikzmark.ins,
 %
 % This is the TikZ key that is used by \Verb+\tikzmark+ to actually save the connection between the name and the picture coordinate.
 % It can be used on an arbitrary picture to save its origin as a tikzmark.
+%
+% \item \Verb+/tikz/check picture id+
+%
+% There are circumstances where, behind the scenes, a tikzpicture is actually placed in a box and processed several times (often this involves \Verb+\mathchoice+).
+% In such a situation, when defining nodes then the last one ``wins'' in that each node remembers the id of the last processed picture.
+% However, only the one that is actually used has its location remembered on the page (since the others don't have a position).
+% This can lead to the situation whereby a node becomes disassociated from its picture and so using it for later reference fails.
+% This key tries to get around that situation by checking the \Verb+aux+ file to see if the current picture was actually typeset last time (by checking for the presence of the remembered location) and if it find that it wasn't, it quietly appends the string \Verb+discard-+ to each node name.
+% The idea being that the version of the picture that is actually typeset will not have this happen and so its nodes ``survive''.
+%
+% \item \Verb+/tikz/maybe define node=#1+
+%
+% The previous key can lead to undefined nodes on the first time that the picture is processed.
+% Using this key will ensure that the specified node is aliased to its \Verb+discard-+ version providing it doesn't already exist.
+% This is purely to get rid of pointless error messages, and also should only be used in conjunction with \Verb+check picture id+.
+%
+% Note that due to the order in which code gets executed, \Verb+check picture id+ should be before any \Verb+maybe define node+ keys.
 %
 % \item \Verb+/tikz/if picture id=#1#2#3+
 %
@@ -791,6 +809,10 @@ and the derived files           tikzmark.ins,
 %
 % The \Verb+save nodes+ code uses \LaTeX3.
 %    \begin{macrocode}
+\ProvidesFile{tikzlibrarytikzmark.code.tex}[%
+  2021/02/16
+  v1.10
+  TikZ library for marking positions in a document]
 \RequirePackage{expl3, l3keys2e, xparse}
 %    \end{macrocode}
 %
@@ -817,6 +839,44 @@ and the derived files           tikzmark.ins,
       \pgf@temp
       \fi%
     },
+  },
+%    \end{macrocode}
+% There are times when some code is executed and then discarded, such as in \Verb+\mathchoice+.
+% This can seriously mess with how TikZ pictures are remembered as the last \Verb+pgfpictureid+ to be \emph{processed} is the one that is used, but it is the one that is \emph{used} that is recorded in the \Verb+aux+ file.
+% This isn't particularly a tikzmark issue, but does come up from time to time with tikzmark as it's all about remembering locations.
+%
+% In actual fact, it only occurs with \Verb+\tikzmarknode+ since the issue is about how nodes are associated with pictures.
+%
+% The solution is to check to see if the \Verb+pgfpictureid+ has been recorded in the \Verb+aux+ file and if it hasn't, quietly prefix the node names with a discard term.
+% This needs to be used \emph{after} \Verb+remember picture+ has been invoked.
+% It probably messes with some other stuff so should only be used under controlled conditions, such as \Verb+\tikzmarknode+.
+%    \begin{macrocode}
+  check picture id/.code={
+    \ifpgfrememberpicturepositiononpage
+    \@ifundefined{pgf@sys@pdf@mark@pos@\pgfpictureid}{%
+      \tikzset{%
+        name prefix/.get=\tzmk@name@prefix,
+        name prefix/.prefix=discard-,
+        execute at end picture={%
+          \tikzset{name prefix/.expand once=\tzmk@name@prefix}%
+        },
+      }%
+    }{}%
+    \fi
+  },
+%    \end{macrocode}
+% We also want a failsafe that quietly handles the case where the document hasn't been compiled enough times (once) to get the information into the \Verb+aux+ file.
+% There will already be messages about needing reruns so we don't need to add to that.
+% We simply ensure that the node exists.
+%    \begin{macrocode}
+  maybe define node/.style={%
+    execute at end picture={%
+      \ifpgfrememberpicturepositiononpage
+      \@ifundefined{pgf@sh@pi@\tikz@pp@name{#1}}{%
+        \pgfnodealias{\tikz@pp@name{#1}}{discard-\tikz@pp@name{#1}}%
+      }{}%
+      \fi
+    }%
   },
 %    \end{macrocode}
 % The positions are already recorded in the \Verb+aux+ file, all we really need to do is provide them with better names.
@@ -860,10 +920,14 @@ and the derived files           tikzmark.ins,
     \@ifundefined{save@pt@\tikzmark@pp@name{#1}}{%
       \pgfkeysalso{#3}%
     }{%
-      \@ifundefined{save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname}{%
+      \@ifundefined{%
+        save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname
+      }{%
         \pgfkeysalso{#3}%
       }{%
-        \ifnum\csname save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname\endcsname=\the\value{page}\relax%
+        \ifnum\csname save@pg@%
+        \csname save@pt@\tikzmark@pp@name{#1}\endcsname%
+        \endcsname=\the\value{page}\relax%
         \pgfkeysalso{#2}%
         \else
         \pgfkeysalso{#3}%
@@ -875,10 +939,14 @@ and the derived files           tikzmark.ins,
     \@ifundefined{save@pt@\tikzmark@pp@name{#1}}{%
       \pgfkeysalso{#4}%
     }{%
-      \@ifundefined{save@pg@\csname save@pt@\tikzmark@pp@name{#1}@label\endcsname}{%
+      \@ifundefined{%
+        save@pg@\csname save@pt@\tikzmark@pp@name{#1}@label\endcsname%
+      }{%
         \pgfkeysalso{#4}%
       }{%
-        \ifnum\csname save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname\endcsname=#2\relax%
+        \ifnum\csname save@pg@%
+        \csname save@pt@\tikzmark@pp@name{#1}\endcsname%
+        \endcsname=#2\relax%
         \pgfkeysalso{#3}%
         \else
         \pgfkeysalso{#4}%
@@ -969,7 +1037,12 @@ and the derived files           tikzmark.ins,
       \@ifundefined{save@pg@\csname save@pt@\tmk@label\endcsname}{}{%
         \@ifundefined{save@pg@\pgfpictureid}{}{%
           \pgfkeysvalueof{/tikz/next page vector}%
-        \edef\tmk@pg{\the\numexpr \csname save@pg@\csname save@pt@\tmk@label\endcsname\endcsname - \csname save@pg@\pgfpictureid\endcsname\relax}%
+        \edef\tmk@pg{%
+          \the\numexpr \csname save@pg@%
+          \csname save@pt@\tmk@label\endcsname\endcsname%
+          -
+          \csname save@pg@\pgfpictureid\endcsname\relax%
+        }%
         \ifnum \tmk@pg > 0 \relax
         \advance \pgf@xa by \pgf@x\relax
         \advance \pgf@ya by \pgf@y\relax
@@ -1005,7 +1078,8 @@ and the derived files           tikzmark.ins,
   \tikzset{remember picture}%
   \tikz@scan@one@point\pgfutil@firstofone#2\relax
   \protected@write\pgfutil@auxout{}{%
-    \string\savepointas{\tikzmark@pp@name{#1}}{\pgfpictureid}{\the\pgf@x}{\the\pgf@y}}%
+    \string\savepointas%
+    {\tikzmark@pp@name{#1}}{\pgfpictureid}{\the\pgf@x}{\the\pgf@y}}%
 }
 %    \end{macrocode}
 % And finally, the ultimate invoker:
@@ -1112,7 +1186,9 @@ and the derived files           tikzmark.ins,
     \@ifundefined{save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname}{%
       \tikzmark@false
     }{%
-      \ifnum\csname save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname\endcsname=#2\relax%
+      \ifnum\csname save@pg@%
+      \csname save@pt@\tikzmark@pp@name{#1}\endcsname%
+      \endcsname=#2\relax%
       \tikzmark@true
       \else
       \tikzmark@false
@@ -1133,7 +1209,9 @@ and the derived files           tikzmark.ins,
     \@ifundefined{save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname}{%
       \tikzmark@false
     }{%
-      \ifnum\csname save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname\endcsname=\the\value{page}\relax%
+      \ifnum\csname save@pg@%
+      \csname save@pt@\tikzmark@pp@name{#1}\endcsname%
+      \endcsname=\the\value{page}\relax%
       \tikzmark@true
       \else
       \tikzmark@false
@@ -1256,8 +1334,10 @@ and the derived files           tikzmark.ins,
 \tikzset{external/export next/.try=false}%
   \tikz[%
     remember picture,
-    baseline=(#2.base),
     save picture id={#2},
+    check picture id,
+    maybe define node={#2},
+    baseline=(#2.base),
     every tikzmarknode picture/.try
   ] {
     \node[
@@ -1292,25 +1372,25 @@ and the derived files           tikzmark.ins,
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
 \edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-3\relax}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
-  \pgfutil@ifundefined{pgf@sh@ns@#2}{%
-    \pgfnodealias{#2}{#2-t}%
-    \tikzmarkalias{#2}{#2-t}%
+  \pgfutil@ifundefined{pgf@sh@ns@\tikz@pp@name{#2}}{%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-t}}%
+    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
   }{}%
   \else
-    \pgfnodealias{#2}{#2-d}%
-    \tikzmarkalias{#2}{#2-d}%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-d}}%
+    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-d}}%
   \fi
   \else
-    \pgfnodealias{#2}{#2-t}%
-    \tikzmarkalias{#2}{#2-t}%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-t}}%
+    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
   \fi
   \else
-    \pgfnodealias{#2}{#2-s}%
-    \tikzmarkalias{#2}{#2-s}%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-s}}%
+    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-s}}%
   \fi
   \else
-    \pgfnodealias{#2}{#2-ss}%
-    \tikzmarkalias{#2}{#2-ss}%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-ss}}%
+    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-ss}}%
   \fi
   \else
     \tikzmarknode@{#1}{#2}{#3}%
