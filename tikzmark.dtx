@@ -987,11 +987,22 @@ and the derived files           tikzmark.ins,
 % \end{macro}
 %
 % \begin{macro}{\tikzmarkalias}
-% Alias a tikzmark to another name (used in tikzmarknode)
+% Alias a tikzmark to another name (used in tikzmarknode).
+% The alias is saved to the aux-file so that it is available prior to the definition.
+% The private one doesn't use the prefix-suffix for greater internal flexibility.
+% The public one does.
 %    \begin{macrocode}
+\def\@tikzmarkalias#1#2{%
+  \@ifundefined{save@pt@#2}{}{%
+    \pgf@node@gnamelet{save@pt@#1}{save@pt@#2}%
+    \pgf@node@gnamelet{save@pt@#1@offset}{save@pt@#2@offset}%
+    \protected@write\pgfutil@auxout{}{%
+      \string\savepointas%
+      {#1}{\csname save@pt@#2\endcsname}\expandafter\expandafter\expandafter\@gobble\csname save@pt@#2@offset\endcsname}%
+  }%
+}
 \def\tikzmarkalias#1#2{%
-  \pgf@node@gnamelet{save@pt@#1}{save@pt@#2}%
-  \pgf@node@gnamelet{save@pt@#1@offset}{save@pt@#2@offset}%
+  \@tikzmarkalias{\tikzmark@pp@name{#1}}{\tikzmark@pp@name{#2}}%
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1299,23 +1310,23 @@ and the derived files           tikzmark.ins,
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
   \pgfutil@ifundefined{pgf@sh@ns@#2}{%
     \pgfnodealias{#2}{#2-t}%
-    \tikzmarkalias{#2}{#2-t}%
+    \@tikzmarkalias{#2}{#2-t}%
   }{}%
   \else
     \pgfnodealias{#2}{#2-d}%
-    \tikzmarkalias{#2}{#2-d}%
+    \@tikzmarkalias{#2}{#2-d}%
   \fi
   \else
     \pgfnodealias{#2}{#2-t}%
-    \tikzmarkalias{#2}{#2-t}%
+    \@tikzmarkalias{#2}{#2-t}%
   \fi
   \else
     \pgfnodealias{#2}{#2-s}%
-    \tikzmarkalias{#2}{#2-s}%
+    \@tikzmarkalias{#2}{#2-s}%
   \fi
   \else
     \pgfnodealias{#2}{#2-ss}%
-    \tikzmarkalias{#2}{#2-ss}%
+    \@tikzmarkalias{#2}{#2-ss}%
   \fi
   \else
     \subnode@{#1}{#2}{#3}%
@@ -1374,23 +1385,23 @@ and the derived files           tikzmark.ins,
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
   \pgfutil@ifundefined{pgf@sh@ns@\tikz@pp@name{#2}}{%
     \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-t}}%
-    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
   }{}%
   \else
     \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-d}}%
-    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-d}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-d}}%
   \fi
   \else
     \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-t}}%
-    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
   \fi
   \else
     \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-s}}%
-    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-s}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-s}}%
   \fi
   \else
     \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-ss}}%
-    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-ss}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-ss}}%
   \fi
   \else
     \tikzmarknode@{#1}{#2}{#3}%
