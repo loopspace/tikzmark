@@ -74,6 +74,26 @@ Testing transformations: there's a tikzmark\tikzmark{l} here
 
 \newpage
 
+\section{Testing inside tikzpicture}
+
+\begin{tikzpicture}
+\tikzmark{inside a}{(1,2)}
+\draw[->] (0,0) -- (pic cs:inside a);
+\fill[blue] (1,2) circle[radius=3pt];
+\fill[green] (0,0) circle[radius=3pt];
+\begin{scope}[shift={(2,1)},rotate=30,scale=.8]
+\tikzmark{inside b}{(1,2)}
+\fill[red] (1,2) circle[radius=3pt];
+\fill[orange] (0,0) circle[radius=3pt];
+\draw[->] (0,0) -- (pic cs:inside a);
+\end{scope}
+\draw[->] (0,0) -- (pic cs:inside b);
+\end{tikzpicture}
+
+
+
+\newpage
+
 \section{Testing Prefix/Suffix}
 
 \begin{itemize}
@@ -157,33 +177,33 @@ Testing maths:
 \item Display style
 \begin{tikzpicture}[remember picture,baseline=-1]
 \node {\(\displaystyle S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
-\node at (0,-1.5) {\(\displaystyle S_n = \subnode{a}{\sum_{k=0}^n r^k} = \frac{r^{n+1} - 1}{r-1} \)};
-\draw[->] (a.south east) to[bend left] (a.south west);
-\node[fit=(a),draw,inner sep=0pt,node contents={}];
+\node at (0,-1.5) {\(\displaystyle S_n = \subnode{da}{\sum_{k=0}^n r^k} = \frac{r^{n+1} - 1}{r-1} \)};
+\draw[->] (da.south east) to[bend left] (da.south west);
+\node[fit=(da),draw,inner sep=0pt,node contents={}];
 \end{tikzpicture}
 
 \item Text style
 \begin{tikzpicture}[remember picture,baseline=-1]
 \node {\(S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
-\node at (0,-1.5) {\(S_n = \subnode{a}{\sum_{k=0}^n r^k} = \frac{r^{n+1} - 1}{r-1} \)};
-\draw[->] (a.south east) to[bend left] (a.south west);
-\node[fit=(a),draw,inner sep=0pt,node contents={}];
+\node at (0,-1.5) {\(S_n = \subnode{ta}{\sum_{k=0}^n r^k} = \frac{r^{n+1} - 1}{r-1} \)};
+\draw[->] (ta.south east) to[bend left] (ta.south west);
+\node[fit=(ta),draw,inner sep=0pt,node contents={}];
 \end{tikzpicture}
 
 \item Script style
 \begin{tikzpicture}[remember picture,baseline=-1]
 \node {\(S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
-\node at (0,-1.5) {\(S_n = \sum_{k=0}^{\subnode{a}{n}} r^k = \frac{r^{n+1} - 1}{r-1} \)};
-\draw[->] (a.south east) to[bend left] (a.south west);
-\node[fit=(a),draw,inner sep=0pt,node contents={}];
+\node at (0,-1.5) {\(S_n = \sum_{k=0}^{\subnode{sa}{n}} r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\draw[->] (sa.south east) to[bend left] (sa.south west);
+\node[fit=(sa),draw,inner sep=0pt,node contents={}];
 \end{tikzpicture}
 
 \item Script script style
 \begin{tikzpicture}[remember picture,baseline=-1]
 \node {\(\scriptstyle S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
-\node at (0,-1.5) {\(\scriptstyle S_n = \sum_{k=0}^{\subnode{a}{n}} r^k = \frac{r^{n+1} - 1}{r-1} \)};
-\draw[->] (a.south east) to[bend left] (a.south west);
-\node[fit=(a),draw,inner sep=0pt,node contents={}];
+\node at (0,-1.5) {\(\scriptstyle S_n = \sum_{k=0}^{\subnode{ssa}{n}} r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\draw[->] (ssa.south east) to[bend left] (ssa.south west);
+\node[fit=(ssa),draw,inner sep=0pt,node contents={}];
 \end{tikzpicture}
 
 \end{itemize}
@@ -336,4 +356,3 @@ A\tikzmark{p} tikzmark \tikzmark{q}.
 % Local Variables:
 % tex-output-type: "pdf18"
 % End:
-%

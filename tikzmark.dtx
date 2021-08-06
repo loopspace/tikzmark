@@ -1088,6 +1088,7 @@ and the derived files           tikzmark.ins,
 \def\tikzmark@inside#1#2{%
   \tikzset{remember picture}%
   \tikz@scan@one@point\pgfutil@firstofone#2\relax
+  \pgf@pos@transform{\pgf@x}{\pgf@y}%
   \protected@write\pgfutil@auxout{}{%
     \string\savepointas%
     {\tikzmark@pp@name{#1}}{\pgfpictureid}{\the\pgf@x}{\the\pgf@y}}%
