@@ -1,0 +1,50 @@
+\documentclass{article}
+
+\usepackage{tikz}
+\usetikzlibrary{tikzmark}
+
+\makeatletter
+\tikzset{
+  pic anchor/.initial={(0,0)},
+  adjust pic position/.code={
+    \tikz@scan@one@point\pgfutil@firstofone(pic cs:\tikz@fig@name-origin)\relax
+    \pgf@xa=\pgf@x
+    \pgf@ya=\pgf@y
+    \tikz@scan@one@point\pgfutil@firstofone(pic cs:\tikz@fig@name-anchor)\relax
+    \advance\pgf@xa by -\pgf@x
+    \advance\pgf@ya by -\pgf@y
+    \tikzset{
+      shift={(\the\pgf@xa,\the\pgf@ya)},
+      execute at end scope={%
+        \tikzmark{\tikz@fig@name-origin}{(0,0)}%
+        \tikzmark{\tikz@fig@name-anchor}{\pgfkeysvalueof{/tikz/pic anchor}}%
+      }
+    }
+  },
+  location/.pic={
+    \begin{scope}[adjust pic position]
+    \draw (0,0) -- (2,3);
+    \node (-A) at (2,1) {A};
+    \end{scope}
+  }
+}
+\makeatother
+\begin{document}
+
+\begin{tikzpicture}
+\draw
+(0,0) circle[radius=6pt]
+(2,1) circle[radius=6pt]
+;
+\pic[name=test,pic anchor={(-A)}] at (2,1) {location};
+\draw[red] (pic cs:test-origin) -- (pic cs:test-anchor);
+\begin{scope}[shift={(2,3)},rotate=30,scale=2]
+\fill
+(1,0) circle[radius=3pt]
+;
+\draw (pic cs:where is it) -- ++(0,1);
+\tikzmark{where is it}{(1,0)}
+\end{scope}
+\draw (pic cs:where is it) -- ++(0,-1);
+\end{tikzpicture}
+\end{document}
