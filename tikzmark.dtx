@@ -235,6 +235,7 @@ and the derived files           tikzmark.ins,
 % \changes{1.7}{2019/05/07}{Added conditions to test if a tikzmark is on a particular page}
 % \changes{1.8}{2019/10/04}{Fixed some bugs with subnode and tikzmarknode inside maths}
 % \changes{1.10}{2021/02/16}{Tikzmarknode is now prefix and suffix aware, and added a test to see if a picture id has been saved to the aux file for times when pictures are thrown away, eg in AMS's text command}
+% \changes{1.11}{2021/08/16}{Tikzmark inside a tikzpicture was not applying any surrounding transformation before saving the coordinates.  Code for adjusting a pic's location based on an internal coordinate.}
 %
 % \DoNotIndex{\newcommand,\newenvironment}
 %
@@ -503,6 +504,22 @@ and the derived files           tikzmark.ins,
 % Without the automatic suffix, only the final positions of the marks would be used throughout.
 %
 % This was inspired by the question \href{http://tex.stackexchange.com/q/302517/86}{using tikzmark subnode with overlays beamer} on TeX-SX.
+%
+%
+% \item \Verb+adjust pic position+, \Verb+pic anchor+, and \Verb+wrap pic+.
+%
+% These keys can be used to enable advanced positioning of \Verb+pic+s.
+% The standard positioning of a \Verb+pic+ places its internal origin at the location specified on the \Verb!\pic! command.
+% This is more limited than what is available to a \Verb+node+ whereby any of the defined anchors can be placed at the given position.
+% These keys allow a little more flexibility to \Verb+pic+ positioning by allowing a \Verb+pic anchor+ to be defined and used as the point to place at the given position.
+%
+% To use this, the code that defines the \Verb+pic+ needs to be wrapped in a \Verb!scope! with the key \Verb!adjust pic position!.
+% Then when invoking the \Verb!pic! the key !pic anchor={coordinate}! can be used to specify a point inside the \Verb!pic! to use as the anchor.
+% This point is evaluated inside the \Verb!pic! so if using a node then the node name should be specified as if inside the \Verb!pic!.
+%
+% If wanting to use this with an existing pic that can't be easily edited, there is a \Verb+wrap pic+ key which \emph{attempts} to wrap the original pic in an appropriate scope.
+% It is quite likely that I don't have all the right options passed through to the inner pic as yet.
+%  
 %
 % \item \Verb+\subnode[options]{name}{content}+
 %
@@ -811,7 +828,7 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \ProvidesFile{tikzlibrarytikzmark.code.tex}[%
   2021/02/16
-  v1.10
+  v1.11
   TikZ library for marking positions in a document]
 \RequirePackage{expl3, l3keys2e, xparse}
 %    \end{macrocode}
@@ -959,6 +976,55 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
   tikzmark prefix/.initial=,%
   tikzmark suffix/.initial=,%
+%    \end{macrocode}
+% Tikzmarks can be used to adjust the position of a pic so that an internally defined coordinate is used to locate the pic.
+%
+% The key used to adjust the location is \Verb!pic anchor={coordinate}! where \Verb!coordinate! is evaluated internally to the \Verb!pic!, so can use node names. 
+%    \begin{macrocode}
+  pic anchor/.initial={(0,0)},
+%    \end{macrocode}
+% The code that does the adjustment must be added to the \Verb!pic! on an enclosing scope.
+% If using someone else's pic, define a new pic that surrounds the old one in a scope.
+%    \begin{macrocode}  
+  adjust pic position/.code={
+    \tikz@scan@one@point\pgfutil@firstofone(pic cs:\tikz@fig@name-origin)\relax
+    \pgf@xa=\pgf@x
+    \pgf@ya=\pgf@y
+    \tikz@scan@one@point\pgfutil@firstofone(pic cs:\tikz@fig@name-anchor)\relax
+    \advance\pgf@xa by -\pgf@x
+    \advance\pgf@ya by -\pgf@y
+    \tikzset{
+      shift={(\the\pgf@xa,\the\pgf@ya)},
+      execute at end scope={%
+        \tikzmark{\tikz@fig@name-origin}{(0,0)}%
+        \tikzmark{\tikz@fig@name-anchor}{\pgfkeysvalueof{/tikz/pic anchor}}%
+      }
+    }
+  },
+% \end{macrocode}
+% If wanting to use this with an existing pic and it isn't possible or easy to change the original definition, the following code wraps the original pic code in a suitable scope.
+% It may not work with advanced pics.  
+%
+% First, define a way to alias a pic.
+% \begin{macrocode}
+  pic alias/.code 2 args={%
+    \pgfkeysgetvalue{/tikz/pics/#2/.@cmd}{\tkzmk@temppic}%
+    \global\pgfkeyslet{/tikz/pics/#1/.@cmd}{\tkzmk@temppic}%
+    \pgfkeysgetvalue{/tikz/pics/#2/.@body}{\tkzmk@temppic}%
+    \global\pgfkeyslet{/tikz/pics/#1/.@body}{\tkzmk@temppic}%
+  },
+% \end{macrocode}
+% Now, alias the original pic as \Verb!tikzmark <pic name> original! (only alias rather than completely overwrite so that the original is still available if all goes wrong) and define a pic with the original name by wrapping it in a scope.
+% There are probably more options that should be passed through.
+% \begin{macrocode}
+  wrap pic/.style={
+    pic alias={tikzmark #1 original}{#1},
+    #1/.pic={
+      \begin{scope}[adjust pic position]
+      \pic[pic actions,name=\tikz@fig@name] {tikzmark #1 original};
+      \end{scope}
+    }
+  }
 }
 %    \end{macrocode}
 %

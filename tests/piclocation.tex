@@ -3,32 +3,22 @@
 \usepackage{tikz}
 \usetikzlibrary{tikzmark}
 
-\makeatletter
+
+
 \tikzset{
-  pic anchor/.initial={(0,0)},
-  adjust pic position/.code={
-    \tikz@scan@one@point\pgfutil@firstofone(pic cs:\tikz@fig@name-origin)\relax
-    \pgf@xa=\pgf@x
-    \pgf@ya=\pgf@y
-    \tikz@scan@one@point\pgfutil@firstofone(pic cs:\tikz@fig@name-anchor)\relax
-    \advance\pgf@xa by -\pgf@x
-    \advance\pgf@ya by -\pgf@y
-    \tikzset{
-      shift={(\the\pgf@xa,\the\pgf@ya)},
-      execute at end scope={%
-        \tikzmark{\tikz@fig@name-origin}{(0,0)}%
-        \tikzmark{\tikz@fig@name-anchor}{\pgfkeysvalueof{/tikz/pic anchor}}%
-      }
-    }
-  },
   location/.pic={
-    \begin{scope}[adjust pic position]
     \draw (0,0) -- (2,3);
     \node (-A) at (2,1) {A};
-    \end{scope}
-  }
+  },
 }
-\makeatother
+\tikzset{wrap pic=location}
+
+\pgfkeysgetvalue{/tikz/pics/location/.@cmd}{\stuff}
+\show\stuff
+\pgfkeysgetvalue{/tikz/pics/tikzmark location original/.@cmd}{\stuff}
+\show\stuff
+
+
 \begin{document}
 
 \begin{tikzpicture}
