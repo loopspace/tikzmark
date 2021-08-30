@@ -53,6 +53,7 @@ and the derived files           tikzmark.ins,
                                 tikzmark.pdf,
                                 tikzlibrarytikzmark.code.tex, and
                                 tikzmarklibrarylistings.code.tex
+                                tikzmarklibraryams.code.tex
 
 \endpostamble
 \usedir{tex/latex/tikzmark}
@@ -61,6 +62,9 @@ and the derived files           tikzmark.ins,
 }
 \generate{
   \file{tikzmarklibrarylistings.code.tex}{\from{\jobname.dtx}{listings}}
+}
+\generate{
+  \file{tikzmarklibraryams.code.tex}{\from{\jobname.dtx}{ams}}
 }
 %\generate{
 % \file{tikzmarklibraryhighlight.code.tex}{\from{\jobname.dtx}{highlight}}
@@ -92,7 +96,7 @@ and the derived files           tikzmark.ins,
 \usepackage{listings}
 \usepackage{tikz}
 \usetikzlibrary{fit,arrows,tikzmark,shadows,decorations.pathreplacing,calc}
-\usetikzmarklibrary{listings}
+\usetikzmarklibrary{ams,listings}
 
 %\usepackage[numbered]{hypdoc}
 \definecolor{lstbgcolor}{rgb}{0.9,0.9,0.9} 
@@ -206,7 +210,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{1178}
+% \CheckSum{1390}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -236,6 +240,7 @@ and the derived files           tikzmark.ins,
 % \changes{1.8}{2019/10/04}{Fixed some bugs with subnode and tikzmarknode inside maths}
 % \changes{1.10}{2021/02/16}{Tikzmarknode is now prefix and suffix aware, and added a test to see if a picture id has been saved to the aux file for times when pictures are thrown away, eg in AMS's text command}
 % \changes{1.11}{2021/08/16}{Tikzmark inside a tikzpicture was not applying any surrounding transformation before saving the coordinates.  Code for adjusting a pic's location based on an internal coordinate.}
+% \changes{1.12}{2021/08/24}{Experimental library for creating pseudo-nodes around AMSMath equation alignment boxes.}
 %
 % \DoNotIndex{\newcommand,\newenvironment}
 %
@@ -506,20 +511,20 @@ and the derived files           tikzmark.ins,
 % This was inspired by the question \href{http://tex.stackexchange.com/q/302517/86}{using tikzmark subnode with overlays beamer} on TeX-SX.
 %
 %
-% \item \Verb+adjust pic position+, \Verb+pic anchor+, and \Verb+wrap pic+.
+% \item \Verb+pic anchor+, and \Verb+surround pic+.
 %
 % These keys can be used to enable advanced positioning of \Verb+pic+s.
 % The standard positioning of a \Verb+pic+ places its internal origin at the location specified on the \Verb!\pic! command.
 % This is more limited than what is available to a \Verb+node+ whereby any of the defined anchors can be placed at the given position.
-% These keys allow a little more flexibility to \Verb+pic+ positioning by allowing a \Verb+pic anchor+ to be defined and used as the point to place at the given position.
+% The key \Verb+pic anchor+ allows a little more flexibility to \Verb+pic+ positioning by allowing a \Verb+pic anchor+ to be defined and used as the point to place at the given position.
 %
-% To use this, the code that defines the \Verb+pic+ needs to be wrapped in a \Verb!scope! with the key \Verb!adjust pic position!.
-% Then when invoking the \Verb!pic! the key !pic anchor={coordinate}! can be used to specify a point inside the \Verb!pic! to use as the anchor.
+% When invoking the \Verb!pic! the key \Verb!pic anchor={coordinate}! can be used to specify a point inside the \Verb!pic! to use as the anchor.
 % This point is evaluated inside the \Verb!pic! so if using a node then the node name should be specified as if inside the \Verb!pic!.
 %
-% If wanting to use this with an existing pic that can't be easily edited, there is a \Verb+wrap pic+ key which \emph{attempts} to wrap the original pic in an appropriate scope.
-% It is quite likely that I don't have all the right options passed through to the inner pic as yet.
-%  
+% The node positioning syntax, things like \Verb!below! and \Verb!below=5pt of!, sets the anchor of the following node.
+% Using \Verb!pic anchor! without a coordinate uses this anchor on the bounding box of the pic when positioning the pic.
+%
+% The key \Verb!surround pic! saves the bounding box of the pic as if it were the boundary of a rectangular node, using the name of the pic as the name of the node.
 %
 % \item \Verb+\subnode[options]{name}{content}+
 %
@@ -598,19 +603,16 @@ and the derived files           tikzmark.ins,
 % \end{itemize}
 % \end{enumerate}
 %
-% \section{Examples and Extras}
+% \section{Examples}
 %
 % The \Verb+\tikzmark+ command has been used in numerous answers on \href{http://tex.stackexchange.com}{TeX-SX}.
-% The plan is to gather some of these into extra libraries which can be loaded via \Verb+\usetikzmarklibrary+.
-%
-% At present, this is the code listings library (which works with the \Verb+listings+ package).
-% One that is in development (as it has featured much on the TeX-SX website) is highlighting, however this is not so straightforward to implement so is still under development.
 %
 % \subsection{Basic Examples}
 %
 % A simple example of the \Verb+\tikzmark+ macro is the following.
 %
 % \begin{example}
+% \tikzset{tikzmark prefix=ex1-}
 % \[
 %  \tikzmark{a} e^{i \pi/2} = i
 % \]
@@ -619,6 +621,7 @@ and the derived files           tikzmark.ins,
 % \end{example}
 %
 % \begin{example}
+% \tikzset{tikzmark prefix=ex2-}
 % \begin{itemize}
 % \item A first item,\tikzmark{b}
 % \item A second item,\tikzmark{c}
@@ -630,6 +633,7 @@ and the derived files           tikzmark.ins,
 % \end{example}
 %
 % \begin{example}
+% \tikzset{tikzmark prefix=ex3-}
 % \begin{tikzpicture}[remember picture]
 % \node (a) at (0,0) {This has a \subnode{sub}{subnode} in it};
 % \draw[->] (0,-1) to[bend right] (sub);
@@ -639,7 +643,7 @@ and the derived files           tikzmark.ins,
 % An example using \Verb+\tikzmark+ inside a \Verb+tikzpicture+
 %
 % \begin{example}
-% \tikzset{tikzmark prefix=ex3-}
+% \tikzset{tikzmark prefix=ex4-}
 % \begin{tikzpicture}[remember picture,overlay]
 % \draw[->,line width=1mm,cyan] (pic cs:a) to[bend left] (pic cs:b);
 % \end{tikzpicture}
@@ -655,6 +659,7 @@ and the derived files           tikzmark.ins,
 % The \Verb+\tikmarknode+ puts a node around some text, which can be referred to later, and adds a \Verb+\tikzmark+ at its origin.
 %
 % \begin{example}
+% \tikzset{tikzmark prefix=ex5-}
 % Putting a node around \tikzmarknode{txt}{some text} means we can connect text together, including in maths:
 % \[
 % \tikzmarknode{a}{\sum_{k=1}^n} k^{\tikzmarknode{b}{2}}
@@ -736,6 +741,14 @@ and the derived files           tikzmark.ins,
 % \fbox{\IfFileExists{tikzrefextnodes.pdf}{\includegraphics{tikzrefextnodes}}{}}
 % \end{center}
 %
+% \section{Additional Libraries}
+%
+% Some of the more ambitious uses of \Verb!\tikzmark! involve a fair bit of extra code and so are worth gathering in to extra libraries of their own.
+% These can be loaded via \Verb+\usetikzmarklibrary+.
+%
+% At present, there are two libraries: one for code listings which works with the \Verb+listings+ package and one for AMSMath equations.
+% One that is in development (as it has featured much on the TeX-SX website) is highlighting, however this is not so straightforward to implement so is still under development.
+%
 % \subsection{Code Listings}
 %
 % If the \Verb+listings+ package has been loaded then issuing
@@ -766,6 +779,7 @@ and the derived files           tikzmark.ins,
 % The following example shows this, where the red dots are the \Verb+start+, the blue are \Verb+end+, and the green are \Verb+first+.
 %
 % \begin{example}
+% \tikzset{tikzmark prefix=ex6-}
 % \begin{tikzpicture}[remember picture]
 % \foreach \k in {0,...,7} {
 % \iftikzmark{line-code-\k-start}{\fill[red,overlay] (pic cs:line-code-\k-start) circle[radius=4pt];}{\message{No start for \k}}
@@ -805,7 +819,54 @@ and the derived files           tikzmark.ins,
 % \end{lstlisting}
 % \end{example}
 %
+% \subsection{AMS Equation Environments}
 %
+% \textbf{This is an experimental library.}
+%
+% If the \Verb+amsmath+ package has been loaded then issuing
+%
+% \Verb+\usetikzmarklibrary{ams}+
+%
+% \noindent loads some code that places pseudo-nodes around the boxes that are used in AMSMath's various equation alignment environments, such as \Verb!align! and \Verb!gather!.
+% These environments work by constructing boxes with each of the pieces of the equations that are then put together into the grid.
+% This library hooks in to the unboxing code, before the box is typeset then it measures it and stores that information in various macros as if it were a TikZ node.
+% The aim is that this doesn't disturb the placement, but as far as TikZ is concerned then there is a node there that can be referred to later.
+%
+% As it is experimental, even if this library is loaded then it isn't automatically switched on.
+% To do that, use either the \Verb!tikzmarkmath! environment or the \Verb!\tikzmarkmath! command.
+% Each has an optional argument which is a prefix for the node names (the default is \Verb!equation!).
+% The node names are then of the form \Verb!<prefix>-<number>!.
+% The numbering is held in a counter called \Verb!tikzmarkequation! and is reset when the command is invoked or the environment is started.
+% As usual, redefining \Verb!\thetikzmarkequation! changes the styling of the \Verb!<number>!.
+%
+% To disable the marking, either end the environment or use \Verb!\endtikzmarkmath!.
+% The ending command explicitly removes the hook rather than rely on \TeX\ groupings.
+% It also prints out the number of nodes created to the log file and terminal.
+% This can be useful with figuring out which nodes to use, since the box that this library hooks into is used many times.
+% For example, equation numbers are included with this.
+%
+% The box is also used when assembling a \Verb!\sqrt[3]{4}! command, and as that uses \Verb!\mathchoice! then there are more boxes created than used.
+% So the count of number of nodes created can be more than are actually there.
+%
+% \begin{example}
+% \begin{tikzmarkmath}[pythagoras]
+% 
+% \begin{gather}
+% a^2 = b^2 + c^2
+% \end{gather}
+% 
+% \begin{gather}
+% a = \sqrt[2]{b^2 + c^2}
+% \end{gather}
+% \end{tikzmarkmath}
+% 
+% \begin{tikzpicture}[remember picture, overlay]
+% \foreach \k in {1,2,3,7,8} {
+%   \draw[red]  (pic cs:pythagoras-\k) -- ++(135:1) node[draw,red,circle,font=\tiny,above left] {\k};
+%   \node[draw,blue,fit=(pythagoras-\k),inner sep=0pt] {};
+% }
+% \end{tikzpicture}
+% % \end{example}
 %
 % \section{Acknowledgements}
 %
@@ -827,8 +888,8 @@ and the derived files           tikzmark.ins,
 % The \Verb+save nodes+ code uses \LaTeX3.
 %    \begin{macrocode}
 \ProvidesFile{tikzlibrarytikzmark.code.tex}[%
-  2021/02/16
-  v1.11
+  2021/08/24
+  v1.12
   TikZ library for marking positions in a document]
 \RequirePackage{expl3, l3keys2e, xparse}
 %    \end{macrocode}
@@ -979,14 +1040,26 @@ and the derived files           tikzmark.ins,
 %    \end{macrocode}
 % Tikzmarks can be used to adjust the position of a pic so that an internally defined coordinate is used to locate the pic.
 %
-% The key used to adjust the location is \Verb!pic anchor={coordinate}! where \Verb!coordinate! is evaluated internally to the \Verb!pic!, so can use node names. 
+% The key used to adjust the location is \Verb!pic anchor={coordinate}! where \Verb!coordinate! is evaluated internally to the \Verb!pic!, so can use node names.
 %    \begin{macrocode}
-  pic anchor/.initial={(0,0)},
+  pic anchor location/.initial={(0,0)},
+  pic anchor location/.default=@auto,
+  pic anchor/.style={
+    pic anchor location={#1},
+    next pic/.append style={
+      adjust pic position,
+    }
+  },
 %    \end{macrocode}
-% The code that does the adjustment must be added to the \Verb!pic! on an enclosing scope.
-% If using someone else's pic, define a new pic that surrounds the old one in a scope.
+% The code that does the adjustment is added to the \Verb!pic! on its enclosing scope using the \Verb!every pic! key.
 %    \begin{macrocode}  
   adjust pic position/.code={
+    \tikz@fig@mustbenamed
+    \pgfkeysgetvalue{/tikz/pic anchor location}\tkzmk@anchor
+    \ifx\tkzmk@anchor\tikz@auto@text
+    \tikzset{local bounding box/.expanded=\tikz@fig@name}%
+    \def\tkzmk@anchor{(\tikz@fig@name.\tikz@anchor)}%
+    \fi
     \tikz@scan@one@point\pgfutil@firstofone(pic cs:\tikz@fig@name-origin)\relax
     \pgf@xa=\pgf@x
     \pgf@ya=\pgf@y
@@ -997,34 +1070,33 @@ and the derived files           tikzmark.ins,
       shift={(\the\pgf@xa,\the\pgf@ya)},
       execute at end scope={%
         \tikzmark{\tikz@fig@name-origin}{(0,0)}%
-        \tikzmark{\tikz@fig@name-anchor}{\pgfkeysvalueof{/tikz/pic anchor}}%
+        \tikzmark{\tikz@fig@name-anchor}{\tkzmk@anchor}%
       }
     }
   },
 % \end{macrocode}
-% If wanting to use this with an existing pic and it isn't possible or easy to change the original definition, the following code wraps the original pic code in a suitable scope.
-% It may not work with advanced pics.  
 %
-% First, define a way to alias a pic.
+% To install this code on a pic, we hook in to the pic's enclosing scope using the \Verb+every pic+ key.
+% To avoid this bubbling down to pics within pics, we clear it once it has been executed.
+% So any code that triggers this adjustment adds \Verb!adjust pic position! to the !next pic! style.
 % \begin{macrocode}
-  pic alias/.code 2 args={%
-    \pgfkeysgetvalue{/tikz/pics/#2/.@cmd}{\tkzmk@temppic}%
-    \global\pgfkeyslet{/tikz/pics/#1/.@cmd}{\tkzmk@temppic}%
-    \pgfkeysgetvalue{/tikz/pics/#2/.@body}{\tkzmk@temppic}%
-    \global\pgfkeyslet{/tikz/pics/#1/.@body}{\tkzmk@temppic}%
+  every pic/.append style={
+    next pic/.try,
+    next pic/.style={}
   },
 % \end{macrocode}
-% Now, alias the original pic as \Verb!tikzmark <pic name> original! (only alias rather than completely overwrite so that the original is still available if all goes wrong) and define a pic with the original name by wrapping it in a scope.
-% There are probably more options that should be passed through.
+%  
+% This code remembers the bounding box of a pic, saving it as if it were a node.
 % \begin{macrocode}
-  wrap pic/.style={
-    pic alias={tikzmark #1 original}{#1},
-    #1/.pic={
-      \begin{scope}[adjust pic position]
-      \pic[pic actions,name=\tikz@fig@name] {tikzmark #1 original};
-      \end{scope}
+  save pic bounding box/.code={
+    \tikz@fig@mustbenamed
+    \tikzset{local bounding box/.expanded=\tikz@fig@name}
+  },
+  surround pic/.style={
+    next pic/.append style={
+      save pic bounding box
     }
-  }
+  },
 }
 %    \end{macrocode}
 %
@@ -1477,6 +1549,69 @@ and the derived files           tikzmark.ins,
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}{\tikzmark@box}
+% This macro takes a name and a box.
+% It pretends that there is a tight-fitting rectangular PGF node around that box with the given name, and saves the required information so that that node can be used later on in a tikzpicture drawing.
+%
+% It does not actually build a node, and it doesn't create a TikZ drawing.
+% Rather, it measures the box and uses that information to define the various macros that store the information about the node.
+%
+% Apart from assigning a load of macros, it does also place a \Verb+\pgfmark+ just before the box.
+% This is needed to be able to locate the node on the page.
+%
+% The command is defined with an \Verb!@! because it is more likely to be used in other packages than by a user.
+%    \begin{macrocode}
+\def\tikzmark@box#1#2{%
+  \begingroup
+  \pgfmark{#1}%
+  \let\pgfnodeparttextbox=#2%
+  \edef\pgfpictureid{pgfid\the\pgf@picture@serial@count}%
+  \def\tikz@fig@name{#1}%
+  \pgfpointorigin
+  \advance\pgf@x by .5\wd\pgfnodeparttextbox
+  \advance\pgf@y by .5\ht\pgfnodeparttextbox
+  \advance\pgf@y by -.5\dp\pgfnodeparttextbox
+  \pgftransformshift{}%
+  \setbox\@tempboxa=\hbox\bgroup
+  {%
+    \tikzset{inner sep=0pt, minimum size=0pt, outer sep=0pt, anchor=base}%
+    \let\pgf@sh@savedmacros=\pgfutil@empty% MW
+    \let\pgf@sh@savedpoints=\pgfutil@empty
+    \def\pgf@sm@shape@name{rectangle}% CJ % TT added prefix!
+    \pgf@sh@s@rectangle
+    \pgf@sh@savedpoints
+    \pgf@sh@savedmacros% MW
+    \pgftransformshift{%
+      \pgf@sh@reanchor{rectangle}{center}%
+      \pgf@x=-\pgf@x
+      \pgf@y=-\pgf@y
+    }%
+    \expandafter\pgfsavepgf@process\csname pgf@sh@sa@\tikz@fig@name\endcsname{%
+      \pgf@sh@reanchor{rectangle}{center}% FIXME : this is double work!
+    }%
+    % Save the saved points and the transformation matrix
+    \edef\pgf@node@name{\tikz@fig@name}%
+    \ifx\pgf@node@name\pgfutil@empty
+    \else
+    \expandafter\xdef\csname pgf@sh@ns@\pgf@node@name\endcsname{rectangle}%
+    \edef\pgf@sh@@temp{%
+      \noexpand\gdef\expandafter\noexpand\csname pgf@sh@np@\pgf@node@name\endcsname}%
+    \expandafter\pgf@sh@@temp\expandafter{%
+      \pgf@sh@savedpoints}%
+    \edef\pgf@sh@@temp{%
+      \noexpand\gdef\expandafter\noexpand\csname pgf@sh@ma@\pgf@node@name\endcsname}% MW
+    \expandafter\pgf@sh@@temp\expandafter{\pgf@sh@savedmacros}% MW
+    \pgfgettransform\pgf@temp
+    \expandafter\xdef\csname pgf@sh@nt@\pgf@node@name\endcsname{\pgf@temp}%
+    \expandafter\xdef\csname pgf@sh@pi@\pgf@node@name\endcsname{\pgfpictureid}%
+    \fi
+  }%
+  \egroup
+  \endgroup
+  \box#2%
+}
+%    \end{macrocode}
+% \end{macro}
 %
 % \begin{macro}{\usetikzmarklibrary}
 %    \begin{macrocode}
@@ -2124,7 +2259,74 @@ and the derived files           tikzmark.ins,
 %</listings>
 % \fi
 %
+% \subsection{AMS Math}
 %
+% This tikzmark library defines a routine that puts a pseudo-node (using \Verb+\tikzmark@box+) around all the pieces used in constructing the various math environments that the AMS Math package provides, such as \Verb+gather+ and \Verb+align+.
+% All of these (and their labels) work by putting various pieces into a box and then typesetting that box in the cells of an \Verb+halign+.
+% By using \Verb+\tikzmark@box+, this can be infiltrated to put nodes around each of those boxes as it is placed.
+%
+% \iffalse
+%<*ams>
+% \fi
+%    \begin{macrocode}
+\@ifpackageloaded{amsmath}{%
+%    \end{macrocode}
+%
+% \begin{macro}{tikzmarkmath}
+%
+% Defines an environment in which any AMS mathematical aligned environments get nodes around each piece of their contents.
+%
+% Start by saving the original \Verb+\boxz@+ command. 
+%    \begin{macrocode}
+  \let\tikzmark@ams@boxz@=\boxz@
+%    \end{macrocode}
+%
+% We'll need a counter to keep track of the nodes.
+%    \begin{macrocode}
+  \newcounter{tikzmarkequation}
+%    \end{macrocode}
+%
+% The nodes will be labelled \Verb!<name>-<number>!.
+% By default the name is \Verb!equation! but this can be customised.
+%    \begin{macrocode}
+  \def\tikzmark@ams@name{equation}
+%    \end{macrocode}
+%
+% This is the substitute command.
+% I don't know if the \Verb=\ifmeasuring@= actually does anything, but it's here just in case at the moment.
+%    \begin{macrocode}
+  \def\tikzmark@boxz@{%
+    \ifmeasuring@
+    \tikzmark@ams@boxz@
+    \else
+    \stepcounter{tikzmarkequation}%
+    \tikzmark@box{\tikzmark@ams@name-\thetikzmarkequation}{\z@}%
+    \fi
+  }
+%    \end{macrocode}
+%
+% This is the environment that sets the node name and swaps out the box code.
+% At the end of the environment we swap back the code so that the commands can be used as standalone \Verb+\tikzmarkmath+ and \Verb+\endtikzmarkmath+ in occasions when it isn't appropriate to use an environment (for example, if it crosses sections, or if it is wanted to turn on this feature for an entire document).
+% At the end of the environment, the number of nodes is written out to the terminal and log file to make it easier to keep track.
+%    \begin{macrocode}
+  \newenvironment{tikzmarkmath}[1][equation]{%
+    \def\tikzmark@ams@name{#1}%
+    \setcounter{tikzmarkequation}{0}%
+    \let\boxz@=\tikzmark@boxz@
+  }{%
+    \let\boxz@=\tikzmark@ams@boxz@
+    \message{Tikzmark math environment \tikzmark@ams@name\space had \the\value{tikzmarkequation} nodes in it}%
+  }
+%    \end{macrocode}
+% \end{macro}
+% \begin{macrocode}
+}{%
+    \PackageError{tikzmark AMS}{The amsmath package has not been loaded.}{}
+}
+%    \end{macrocode}
+% \iffalse
+%</ams>
+% \fi
 %
 % \Finale
 \endinput
