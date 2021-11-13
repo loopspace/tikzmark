@@ -1,0 +1,30 @@
+\documentclass{article}
+%\url{https://tex.stackexchange.com/q/567245/86}
+\usepackage{tikz}
+\usetikzlibrary{tikzmark}
+
+\newenvironment{anEnvironment}{
+    \begin{tikzpicture}
+        \begin{scope}
+  \fill (0,0) circle[radius=5pt];
+        \end{scope}
+        \begin{scope}[
+          anchor=center,
+          scope anchor location,
+          adjust scope position,
+        ]
+}{
+        \end{scope}
+    \end{tikzpicture}
+}
+
+\begin{document}
+
+\begin{anEnvironment}
+\fill[red] (2,0) circle[radius=4pt];
+\fill[red] (2,1) circle[radius=4pt];
+\fill[red] (3,0) circle[radius=4pt];
+\fill[red] (3,1) circle[radius=4pt];
+\end{anEnvironment}
+
+\end{document}

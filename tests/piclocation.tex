@@ -1,23 +1,22 @@
 \documentclass{article}
 
 \usepackage{tikz}
-\usetikzlibrary{tikzmark}
-
-
+\usetikzlibrary{
+  tikzmark,
+  positioning
+}
 
 \tikzset{
   location/.pic={
     \draw (0,0) -- (2,3);
     \node (-A) at (2,1) {A};
+    \pic at (2,0) {sub location};
   },
+  sub location/.pic={
+    \node (-B) at (0,0) {B};
+    \node (-C) at (0,1) {C};
+  }
 }
-\tikzset{wrap pic=location}
-
-\pgfkeysgetvalue{/tikz/pics/location/.@cmd}{\stuff}
-\show\stuff
-\pgfkeysgetvalue{/tikz/pics/tikzmark location original/.@cmd}{\stuff}
-\show\stuff
-
 
 \begin{document}
 
@@ -37,4 +36,10 @@
 \end{scope}
 \draw (pic cs:where is it) -- ++(0,-1);
 \end{tikzpicture}
+
+\begin{tikzpicture}
+\node[draw,circle] (a) {B};
+\pic[below=20pt of a,pic anchor] {location};
+\end{tikzpicture}
+
 \end{document}

@@ -511,9 +511,9 @@ and the derived files           tikzmark.ins,
 % This was inspired by the question \href{http://tex.stackexchange.com/q/302517/86}{using tikzmark subnode with overlays beamer} on TeX-SX.
 %
 %
-% \item \Verb+pic anchor+, and \Verb+surround pic+.
+% \item \Verb+scope anchor+, \Verb+pic anchor+, and \Verb+surround pic+.
 %
-% These keys can be used to enable advanced positioning of \Verb+pic+s.
+% These keys can be used to enable advanced positioning of \Verb+scope+s and \Verb+pic+s.
 % The standard positioning of a \Verb+pic+ places its internal origin at the location specified on the \Verb!\pic! command.
 % This is more limited than what is available to a \Verb+node+ whereby any of the defined anchors can be placed at the given position.
 % The key \Verb+pic anchor+ allows a little more flexibility to \Verb+pic+ positioning by allowing a \Verb+pic anchor+ to be defined and used as the point to place at the given position.
@@ -524,7 +524,14 @@ and the derived files           tikzmark.ins,
 % The node positioning syntax, things like \Verb!below! and \Verb!below=5pt of!, sets the anchor of the following node.
 % Using \Verb!pic anchor! without a coordinate uses this anchor on the bounding box of the pic when positioning the pic.
 %
+% Internally, this works by adjusting the location of the \Verb!pic!'s surrounding scope.
+% So the code can equally be used on \Verb!scope!s.
+% For a \Verb!scope!, use the \Verb!scope anchor! version on the scope directly.
+% The keys \Verb!name! and \Verb!anchor! can be used on the scope as if on a \Verb!node! with the same effect on the positioning.
+%
 % The key \Verb!surround pic! saves the bounding box of the pic as if it were the boundary of a rectangular node, using the name of the pic as the name of the node.
+%
+% This was inspired by the questions \href{https://tex.stackexchange.com/q/185279/86}{Anchoring TiKZ pics} and \href{https://tex.stackexchange.com/q/567245/86}{Reposition Tikz Scope After Size Known}.
 %
 % \item \Verb+\subnode[options]{name}{content}+
 %
@@ -547,7 +554,10 @@ and the derived files           tikzmark.ins,
 % The simplest way to turn a pseudo-node into a more normal node is to use the \Verb+fit+ library.
 % Using the above example, \Verb+\node[fit=(a),draw,inner sep=0pt] {};+ would draw a rectangle around the word \Verb+sub+ of exactly the same size as would appear had a normal node been created.
 %
-% Using a sneaky trick with \Verb+\mathchoice+, \Verb+subnode+ works inside a math environment.  The spacing either side might not be quite right as although it detects the math style it doesn't got beyond that.
+% Using a sneaky trick with \Verb+\mathchoice+, \Verb+subnode+ works inside a math environment.
+% The spacing either side might not be quite right as although it detects the math style it doesn't got beyond that.
+%
+% Note that because of the way that this works, the outer \Verb!tikzpicture! must have the \Verb!remember picture! option set.
 %
 % \item \emph{Node saving}
 %
@@ -1038,24 +1048,29 @@ and the derived files           tikzmark.ins,
   tikzmark prefix/.initial=,%
   tikzmark suffix/.initial=,%
 %    \end{macrocode}
-% Tikzmarks can be used to adjust the position of a pic so that an internally defined coordinate is used to locate the pic.
+% Tikzmarks can be used to adjust the position of a scope or pic so that an internally defined coordinate is used to locate the scope or pic.
 %
-% The key used to adjust the location is \Verb!pic anchor={coordinate}! where \Verb!coordinate! is evaluated internally to the \Verb!pic!, so can use node names.
+% The key used to adjust the location is \Verb!scope anchor={coordinate}! for \Verb!scope!s and \Verb!pic anchor={coordinate}! for \Verb!pic!s, where \Verb!coordinate! is evaluated internally to the \Verb!scope! or \Verb!pic!, so can use node names.
 %    \begin{macrocode}
-  pic anchor location/.initial={(0,0)},
-  pic anchor location/.default=@auto,
+  scope anchor location/.initial={(0,0)},
+  scope anchor location/.default=@auto,
   pic anchor/.style={
-    pic anchor location={#1},
+    scope anchor location={#1},
     next pic/.append style={
-      adjust pic position,
+      adjust scope position,
     }
+  },
+  scope anchor/.style={
+    scope anchor location={#1},
+    adjust scope position,
   },
 %    \end{macrocode}
 % The code that does the adjustment is added to the \Verb!pic! on its enclosing scope using the \Verb!every pic! key.
 %    \begin{macrocode}  
-  adjust pic position/.code={
+  adjust scope position/.code={%
+    \pgfutil@ifundefined{tikz@fig@name}{\let\tikz@fig@name=\pgfutil@empty}{}%
     \tikz@fig@mustbenamed
-    \pgfkeysgetvalue{/tikz/pic anchor location}\tkzmk@anchor
+    \pgfkeysgetvalue{/tikz/scope anchor location}\tkzmk@anchor
     \ifx\tkzmk@anchor\tikz@auto@text
     \tikzset{local bounding box/.expanded=\tikz@fig@name}%
     \def\tkzmk@anchor{(\tikz@fig@name.\tikz@anchor)}%
@@ -1225,6 +1240,7 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \def\tikzmark@inside#1#2{%
   \tikzset{remember picture}%
+  \tikz@resetexpandcount%
   \tikz@scan@one@point\pgfutil@firstofone#2\relax
   \pgf@pos@transform{\pgf@x}{\pgf@y}%
   \protected@write\pgfutil@auxout{}{%
