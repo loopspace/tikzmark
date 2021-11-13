@@ -1069,6 +1069,7 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}  
   adjust scope position/.code={%
     \pgfutil@ifundefined{tikz@fig@name}{\let\tikz@fig@name=\pgfutil@empty}{}%
+    \tikz@resetexpandcount%
     \tikz@fig@mustbenamed
     \pgfkeysgetvalue{/tikz/scope anchor location}\tkzmk@anchor
     \ifx\tkzmk@anchor\tikz@auto@text
