@@ -1182,7 +1182,8 @@ and the derived files           tikzmark.ins,
     \tmk@labeldef#1,(0pt,0pt)\@nil
   \fi
   \@ifundefined{save@pt@\tmk@label}{%
-    \tikz@scan@one@point\pgfutil@firstofone\tmk@def
+    \expandafter\tikz@scan@one@point
+    \expandafter\pgfutil@firstofone\tmk@def\relax
   }{%
     \pgfsys@getposition{\csname save@pt@\tmk@label\endcsname}%
     \save@orig@pic%
