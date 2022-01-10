@@ -1954,6 +1954,7 @@ and the derived files           tikzmark.ins,
     \msg_warning:nnn {tikzmark} {no file} {#1}
   }
 }
+\cs_generate_variant:Nn \restore_nodes_from_file:n {x}
 \AtBeginDocument{\bool_gset_false:N \g__sn_preamble_bool}
 %    \end{macrocode}
 % \end{macro}
@@ -2118,14 +2119,14 @@ and the derived files           tikzmark.ins,
   restore~ nodes~ from~ file/.code={
     \bool_if:NTF \g__sn_preamble_bool
     {
-      \restore_nodes_from_file:n {#1}
+      \restore_nodes_from_file:x {#1}
     }
     {
       \tikz_fig_must_be_named:
       \pgfkeysalso{append~ after~ command={
           \pgfextra{
             \scope
-            \split_argument:NNn \tikzset \restore_nodes_from_file:n {#1}
+            \split_argument:NNn \tikzset \restore_nodes_from_file:x {#1}
             \endscope
           }
         }
@@ -2427,7 +2428,9 @@ and the derived files           tikzmark.ins,
 }
 
 \cs_generate_variant:Nn \hook_gput_next_code:nn {nV}
-
+%    \end{macrocode}
+% 
+%    \begin{macrocode}
 \cs_new_protected_nopar:Npn \tikzmark_start_highlighting:nn #1#2
 {
   \tikzmark_fix_name:Nn \l__tikzmark_start_tl {highlight-start-#2}
