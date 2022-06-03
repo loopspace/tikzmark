@@ -469,7 +469,7 @@ and the derived files           tikzmark.ins,
 % In such a situation, when defining nodes then the last one ``wins'' in that each node remembers the id of the last processed picture.
 % However, only the one that is actually used has its location remembered on the page (since the others don't have a position).
 % This can lead to the situation whereby a node becomes disassociated from its picture and so using it for later reference fails.
-% This key tries to get around that situation by checking the \Verb+aux+ file to see if the current picture was actually typeset last time (by checking for the presence of the remembered location) and if it find that it wasn't, it quietly appends the string \Verb+discard-+ to each node name.
+% This key tries to get around that situation by checking the \Verb+aux+ file to see if the current picture was actually typeset last time (by checking for the presence of the remembered location) and if it finds that it wasn't, it quietly appends the string \Verb+discard-+ to each node name.
 % The idea being that the version of the picture that is actually typeset will not have this happen and so its nodes ``survive''.
 %
 % \item \Verb+/tikz/maybe define node=#1+
@@ -1783,6 +1783,10 @@ and the derived files           tikzmark.ins,
 \ExplSyntaxOn
 %    \end{macrocode}
 %
+% This is how we handle return values from functions
+%    \begin{macrocode}
+\tl_new:N \g__sn_output_tl
+%    \end{macrocode}  
 % We save our information in a ``property list'', which is L3's
 % version of an associative array or dictionary.  They keys will give
 % the ability to store several groups of nodes and restore them at
@@ -1807,9 +1811,10 @@ and the derived files           tikzmark.ins,
 \tl_new:N \l__sn_group_tl
 %    \end{macrocode}
 %
-% We store up the nodes in a list and save them at the end of a given tikzpicture.    
+% We store up the nodes in a list and save them at the end of a given tikzpicture.
+% Has to be global as we're often in a group.    
 %    \begin{macrocode}    
-\clist_new:N \l__sn_nodes_clist
+\clist_new:N \g__sn_nodes_clist
 %    \end{macrocode}
 %
 % This boolean is for whether we save to a file or not.
@@ -1902,16 +1907,17 @@ and the derived files           tikzmark.ins,
 %
 % \begingroup
 % \catcode`_=12
-% \begin{macro}{\save_nodes:Nn}
+% \begin{macro}{\process_node:Nn}
 % This is the command that actually does the work.  It constructs a
 % token list which contains the code that will restore the node data
 % when invoked.  The two arguments are the token list to store this in
-% and a comma separated list of the node names to be saved.
+% and the node name to be saved.
 %    \begin{macrocode}
-\cs_new_nopar:Npn \save_nodes:Nn #1#2
+\cs_new_nopar:Npn \__sn_process_node:n #1
 {
+  \group_begin:
 %    \end{macrocode}
-% Clear our token lists
+% Clear our token list
 %    \begin{macrocode}
   \tl_clear:N \l__sn_tmpa_tl
 %    \end{macrocode}
@@ -1925,21 +1931,16 @@ and the derived files           tikzmark.ins,
     {1}{0}{0}{1}{\dim_use:N \l__sn_x_dim}{\dim_use:N \l__sn_y_dim}
   }
 %    \end{macrocode}  
-% Iterate over the list of node names
-%    \begin{macrocode}
-  \clist_map_inline:nn {#2}
-  {
-%    \end{macrocode}  
 % Test to see if the node has been defined
 %    \begin{macrocode}
-    \tl_if_exist:cT {pgf@sh@ns@##1}
-    {
-%    \end{macrocode}  
+  \tl_if_exist:cT {pgf@sh@ns@#1}
+  {
+%    \end{macrocode}
 % The node information is stored in a series of macros of the form
 % \Verb+\pgf@sh@XX@nodename+ where XX is one of the following.
 %    \begin{macrocode}
-      \clist_map_inline:nn {ns,np,ma,pi}
-      {
+    \clist_map_inline:nn {ns,np,ma,pi}
+    {
 %    \end{macrocode}  
 % Our token list will look like:
 %
@@ -1950,37 +1951,36 @@ and the derived files           tikzmark.ins,
 %
 % This part puts the \Verb+\tl_set:cn {pgf@sh@XX@nodename}+ in place
 %    \begin{macrocode}
-        \tl_put_right:Nn \l__sn_tmpa_tl
-        {
-          \tl_gset:cn {pgf@sh@####1@ \tikz_set_node_name:n{##1} }
-        }
-%    \end{macrocode}  
+      \tl_put_right:Nn \l__sn_tmpa_tl
+      {
+        \tl_gset:cn {pgf@sh@##1@ \tikz_set_node_name:n{#1} }
+      }
+%    \end{macrocode}
 % Now we put the current contents in place.  We're doing this in
 % an expansive context to get at the contents.  The \Verb+\exp_not:v+
 % part takes the current value of \Verb+\pgf@sh@XX@nodename+ and puts
 % it in place, preventing further expansion.
 %    \begin{macrocode}
-        \tl_if_exist:cTF {pgf@sh@####1@##1}
-        {
-          \tl_put_right:Nx \l__sn_tmpa_tl {
-            {\exp_not:v {pgf@sh@####1@ \tikz_set_node_name:n {##1}}}
-          }
-        }
-        {
-          \tl_put_right:Nx \l__sn_tmpa_tl {{}}
-        }
-      }
-      \tl_put_right:Nn \l__sn_tmpa_tl
+      \tl_if_exist:cTF {pgf@sh@##1@#1}
       {
-        \tl_gset:cn {pgf@sh@nt@ \tikz_set_node_name:n{##1} }
-      }
-      \compose_transformations:NVv
-      \l__sn_tmpb_tl \l__sn_centre_tl {pgf@sh@nt@##1}
-      \tl_put_right:Nx \l__sn_tmpa_tl {{\exp_not:V \l__sn_tmpb_tl}}
-      \tl_put_right:Nn \l__sn_tmpa_tl {
-        \transform_node:Nn \l__sn_transformation_tl {
-          \tikz_set_node_name:n{##1}
+        \tl_put_right:Nx \l__sn_tmpa_tl {
+          {\exp_not:v {pgf@sh@##1@ \tikz_set_node_name:n {#1}}}
         }
+      }
+      {
+        \tl_put_right:Nx \l__sn_tmpa_tl {{}}
+      }
+    }
+    \tl_put_right:Nn \l__sn_tmpa_tl
+    {
+      \tl_gset:cn {pgf@sh@nt@ \tikz_set_node_name:n{#1} }
+    }
+    \compose_transformations:NVv
+    \l__sn_tmpb_tl \l__sn_centre_tl {pgf@sh@nt@#1}
+    \tl_put_right:Nx \l__sn_tmpa_tl {{\exp_not:V \l__sn_tmpb_tl}}
+    \tl_put_right:Nn \l__sn_tmpa_tl {
+      \transform_node:Nn \l__sn_transformation_tl {
+        \tikz_set_node_name:n{#1}
       }
     }
   }
@@ -1988,7 +1988,20 @@ and the derived files           tikzmark.ins,
 % Once we've assembled our token list, we store it in the given
 % token list
 %    \begin{macrocode}
-  \tl_set_eq:NN #1 \l__sn_tmpa_tl
+  \tl_gset_eq:NN \g__sn_output_tl \l__sn_tmpa_tl
+  \group_end:
+}
+\cs_new_protected_nopar:Npn \process_node:Nn #1#2
+{
+  \__sn_process_node:n {#2}
+  \tl_set_eq:NN #1 \g__sn_output_tl
+  \tl_gclear:N \g__sn_output_tl
+}
+\cs_new_protected_nopar:Npn \process_gnode:Nn #1#2
+{
+  \__sn_process_node:n {#2}
+  \tl_gset_eq:NN #1 \g__sn_output_tl
+  \tl_gclear:N \g__sn_output_tl
 }
 %    \end{macrocode}  
 % \end{macro}
@@ -1998,7 +2011,12 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \cs_new_nopar:Npn \save_nodes_to_list:nn #1#2
 {
-  \save_nodes:Nn \l__sn_tmpa_tl {#2}
+  \tl_clear:N \l__sn_tmpa_tl
+  \clist_map_inline:nn {#2}
+  {
+    \process_node:Nn \l__sn_tmpb_tl {##1}
+    \tl_put_right:NV \l__sn_tmpa_tl \l__sn_tmpb_tl
+  }
   \prop_gput:NnV \g__sn_prop {#1} \l__sn_tmpa_tl
 }
 %    \end{macrocode}
@@ -2007,24 +2025,27 @@ and the derived files           tikzmark.ins,
 % \begin{macro}{\save_nodes_to_file:n}
 % Save the nodes to a file
 %    \begin{macrocode}
+\cs_generate_variant:Nn \iow_now:Nn {NV}
 \cs_new_nopar:Npn \save_nodes_to_file:n #1
 {
-  \save_nodes:Nn \l__sn_tmpa_tl {#1}
+  \sn_open_stream:
+  \clist_map_inline:nn {#1}
+  {
+    \process_node:Nn \l__sn_tmpa_tl {##1}
 %    \end{macrocode}  
 % Save the token list to the nodes file so that on reading it back in, we restore the node definitions
 %    \begin{macrocode}
-  \sn_open_stream:
-  \iow_now:Nx \g__sn_stream
-  {
-    \iow_newline:
-    \exp_not:V \l__sn_tmpa_tl
-    \iow_newline:
+    \iow_now:Nx \g__sn_stream
+    {
+      \iow_newline:
+      \exp_not:V \l__sn_tmpa_tl
+    }
   }
 }
 %    \end{macrocode}
 % \end{macro}
 %    \begin{macrocode}
-\cs_generate_variant:Nn \save_nodes_to_list:nn {VV}
+\cs_generate_variant:Nn \save_nodes_to_list:nn {VV, Vn}
 \cs_generate_variant:Nn \save_nodes_to_file:n {V}
 %    \end{macrocode}
 %
@@ -2215,19 +2236,19 @@ and the derived files           tikzmark.ins,
 % Append current node or named node to the list of nodes to be saved
 %    \begin{macrocode}
   save~ node/.code={
-    \tl_if_empty:nTF {#1}
+    \tl_if_eq:nnTF {#1} {\pgfkeysnovalue}
     {
       \tikz_fig_must_be_named:
       \pgfkeysalso{
         append~ after~ command={
           \pgfextra{
-            \clist_gput_right:Nv \l__sn_nodes_clist {tikz@last@fig@name}
+            \clist_gput_right:Nv \g__sn_nodes_clist {tikz@last@fig@name}
           }
         }
       }
     }
     {
-      \clist_gput_right:Nn \l__sn_nodes_clist {#1}
+      \clist_gput_right:Nn \g__sn_nodes_clist {#1}
     }
   },
 %    \end{macrocode}  
@@ -2299,19 +2320,19 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \cs_new_nopar:Npn \maybe_save_nodes:
 {
-  \clist_if_empty:NF \l__sn_nodes_clist
+  \clist_if_empty:NF \g__sn_nodes_clist
   {
     \bool_if:NTF \l__sn_file_bool
     {
-      \save_nodes_to_file:V \l__sn_nodes_clist
+      \save_nodes_to_file:V \g__sn_nodes_clist
     }
     {
       \tl_if_empty:NF \l__sn_group_tl
       {
-        \save_nodes_to_list:VV \l__sn_group_tl \l__sn_nodes_clist
+        \save_nodes_to_list:VV \l__sn_group_tl \g__sn_nodes_clist
       }
     }
-    \clist_gclear:N \l__sn_nodes_clist
+    \clist_gclear:N \g__sn_nodes_clist
   }
 }
 %    \end{macrocode}
@@ -2320,22 +2341,25 @@ and the derived files           tikzmark.ins,
 % \begin{macro}{\SaveNode}
 % Command for saving a node outside a TikZ picture.
 %    \begin{macrocode}
-\DeclareDocumentCommand \SaveNode { O{} m }
+\DeclareDocumentCommand \SaveNode { o m }
 {
   \group_begin:
-  \keys_set:nn {tikzmark / save nodes}
+  \IfNoValueF {#1}
   {
-    file=false,
-    group=#1
+    \keys_set:nn {tikzmark / save nodes}
+    {
+      file=false,
+      group=#1
+    }
   }
   \bool_if:NTF \l__sn_file_bool
   {
-    \save_nodes_to_file:n {#1}
+    \save_nodes_to_file:n {#2}
   }
   {
     \tl_if_empty:NF \l__sn_group_tl
     {
-      \save_nodes_to_list:Vn \l__sn_group_tl {#1}
+      \save_nodes_to_list:Vn \l__sn_group_tl {#2}
     }
   }
   \group_end:
@@ -2522,7 +2546,7 @@ and the derived files           tikzmark.ins,
 %<*highlighting>
 % \fi
 %
-% \section{Highlighting}
+% \subsection{Highlighting}
 %
 % An early use of \Verb!\tikzmark! was to add highlighting to text by drawing over or under the text between two tikzmarks, for example the question \href{http://tex.stackexchange.com/q/46434/86}{How to "highlight" text/formulas with tikz?}.
 %
