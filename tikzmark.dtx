@@ -96,8 +96,8 @@ and the derived files           tikzmark.ins,
 %\usepackage{morefloats}
 \usepackage{listings}
 \usepackage{tikz}
-\usetikzlibrary{fit,arrows,tikzmark,shadows,decorations.pathreplacing,calc}
-\usetikzmarklibrary{ams,listings}
+\usetikzlibrary{fit,arrows.meta,tikzmark,shadows,decorations.pathreplacing,calc}
+\usetikzmarklibrary{ams,listings,highlighting}
 
 %\usepackage[numbered]{hypdoc}
 \definecolor{lstbgcolor}{rgb}{0.9,0.9,0.9} 
@@ -773,8 +773,7 @@ and the derived files           tikzmark.ins,
 % Some of the more ambitious uses of \Verb!\tikzmark! involve a fair bit of extra code and so are worth gathering in to extra libraries of their own.
 % These can be loaded via \Verb+\usetikzmarklibrary+.
 %
-% At present, there are two libraries: one for code listings which works with the \Verb+listings+ package and one for AMSMath equations.
-% One that is in development (as it has featured much on the TeX-SX website) is highlighting, however this is not so straightforward to implement so is still under development.
+% At present, there are three libraries: one for code listings which works with the \Verb+listings+ package, one for AMSMath equations, and one for highlighting.
 %
 % \subsection{Code Listings}
 %
@@ -900,51 +899,161 @@ and the derived files           tikzmark.ins,
 %
 % I've returned to the highlighting library.
 % The \LaTeX3 hook mechanism makes a couple of things possible that were tricky before.
-% At the moment, it only works when the highlighting starts and ends on the same page.
 %
 % The idea of the highlighting mechanism is to use two \Verb!\tikzmark!s to mark a start and end of a region to be highlighted.
 % The region is considered to be formed by lines of text, with the first mark at the baseline of the start and the second at the baseline of the end.
 %
 % The highlighting itself is done by inserting code in the shipout routine before the page itself is laid out.
-% This means that the highlighting is behind the text, which makes it supposedly easier to read the text.
+% So the highlighting is on a separate layer to the text itself, which can be either behind or in front of the text layer.
+% The hook mechanisem also makes it relatively simple to support page breaks between the start and end of highlighting.
 %
-% Since the highlighting is separate to the flow of the text, it doesn't make sense to use an environment to mark the start and end of the highlighting so instead there are two commands: \Verb!\hlstart[options]{mark}! and \Verb!\hlend{mark}!.
-% The optional argument to \Verb!\hlstart! consists of key-value pairs that control the behaviour of the highlighted region.
+% Since the highlighting is separate to the flow of the text, it doesn't make sense to use an environment to mark the start and end of the highlighting so instead there are two commands: \Verb!\StartHighlighting[options]! and \Verb!\EndHighlighting!, or a single command \Verb!\Highlight[options]{text}! that just highlights the \Verb!text!.
+% At the moment, nesting highlighting is not supported.
 %
-% The keys are as follows, and hopefully are self-explanatory.
+% The optional argument to \Verb!\StartHighlighting! (or \Verb!\Highlight!) consists of key-value pairs that control the behaviour of the highlighted region.
+% There are particular keys in the \Verb!/tikz/highlighter! family which control the size of the highlighted region.
+%
+% The keys are as follows:
 %
 % \begin{itemize}
-% \item \texttt{colour}
-% \item \texttt{width}
-% \item \texttt{cap}
-% \item \texttt{opacity}
+% \item \texttt{direction}
+% \item \texttt{layer}
 % \item \texttt{initial height}
 % \item \texttt{initial depth}
 % \item \texttt{initial offset}
 % \item \texttt{final height}
 % \item \texttt{final depth}
 % \item \texttt{final offset}
+% \item \texttt{left margin}
+% \item \texttt{right margin}
 % \item \texttt{height}
 % \item \texttt{depth}
 % \item \texttt{offset}
 % \item \texttt{margin}
-% \item \texttt{left margin}
-% \item \texttt{right margin}
-% \item \texttt{top margin}
-% \item \texttt{bottom margin}
 % \end{itemize}
 %
-% This version of the highlighting library is both old and new.
-% The basic idea is quite old, and some of the code dates from then and could probably do with updating.
-% There were also some ideas in the original code that I've not yet implemented with the new structure as I want to get the basic idea of highlighting right before extending it.
-% 
-% Two of the ideas are:
+% The highlighting code draws a region which can be styled with standard TikZ keys, more of which in a moment.
+% Although it is a single region, the \emph{intention} is to simulate using an actual highlighter.
+% The first key, \Verb!direction!, is used to draw the region as if the highlighter were used in a particular direction.
+% The options are \Verb!horizontal!, \Verb!vertical!, or \Verb!box!.
+% The default is \Verb!horizontal!.
 %
-% \begin{enumerate}
-% \item Highlighting spanning multiple pages,
-% \item Fading, which involves putting the highlighting over the top of the text.
-% \end{enumerate}
-% 
+% The second key, \Verb!layer!, determines whether the highlighter is rendered on the \Verb!background! or \Verb!foreground! layer.
+% Using the \Verb!background! layer puts the highlighting underneath the text, which will make the text easier to read.
+% The \Verb!foreground! option puts the highlighting over the text, which can be used to fade the text.
+% The default is \Verb!background!.
+%
+% The shape of the region depends on a few things, such as whether the highlighting starts and ends on the same line.
+%
+% \begin{tikzpicture}[>=Latex]
+% \fill (0,0) circle[radius=2pt];
+% \fill (4,0) circle[radius=2pt];
+% \draw (-1,-1) rectangle (5,1);
+% \draw[dashed] (0,0) -- (4,0);
+% \draw[<->] (0,0) -- +(-1,0);
+% \draw[<->] (0,0) -- +(0,1);
+% \draw[<->] (4,0) -- +(0,-1);
+% \draw[<->] (4,0) -- +(1,0);
+% \draw[<-] (-.5,0) to[out=90,in=-90] +(-1,1.5) node[above] {initial offset};
+% \draw[<-] (4.5,0) to[out=90,in=-90] +(1,1.5) node[above] {final offset};
+% \draw[<-] (0,.5) to[out=0,in=180] +(1,1.5) node[right] {initial height};
+% \draw[<-] (4,-.5) to[out=0,in=180] +(1,-1.5) node[right] {final depth};
+% \node[anchor=base] at (2,0) {Single line};
+% \end{tikzpicture}
+%
+% \begin{tikzpicture}[>=Latex]
+% \fill (0,0) circle[radius=2pt];
+% \draw (-1,-1) rectangle (4,1);
+% \draw[dashed] (0,0) -- (4,0);
+% \draw[<->] (0,0) -- +(-1,0);
+% \draw[<->] (0,0) -- +(0,1);
+% \draw[<->] (0,0) -- +(0,-1);
+% \draw[<-] (-.5,0) to[out=90,in=-90] +(-1,1.5) node[above] {initial offset};
+% \draw[<-] (0,.5) to[out=0,in=180] +(1,1.5) node[right] {initial height};
+% \draw[<-] (0,-.5) to[out=0,in=180] +(1,-1.5) node[right] {initial depth};
+% \node[anchor=base] at (2,0) {Split line};
+% \begin{scope}[yshift=-3cm,xshift=-5cm]
+% \fill (4,0) circle[radius=2pt];
+% \draw (0,-1) rectangle (5,1);
+% \draw[dashed] (0,0) -- (4,0);
+% \draw[<->] (4,0) -- +(1,0);
+% \draw[<->] (4,0) -- +(0,1);
+% \draw[<->] (4,0) -- +(0,-1);
+% \draw[<-] (4.5,0) to[out=90,in=180] +(2.5,0) node[right] {final offset};
+% \draw[<-] (4,.5) to[out=180,in=0] +(-1,1.5) node[left] {final height};
+% \draw[<-] (4,-.5) to[out=0,in=180] +(1.5,-1) node[right] {final depth};
+% \node[anchor=base] at (2,0) {Split line};
+% \end{scope}
+% \end{tikzpicture}
+%
+% \begin{tikzpicture}[>=Latex]
+% \fill (0,0) circle[radius=2pt];
+% \fill (4,0) circle[radius=2pt];
+% \fill (-4,-1) circle[radius=2pt];
+% \fill (4,-1) circle[radius=2pt];
+% \fill (-4,-2) circle[radius=2pt];
+% \fill (0,-2) circle[radius=2pt];
+% \draw (-1,0) -- (-1,1) -- (5,1) -- (5,-2) -- (1,-2) -- (1,-3) -- (-5,-3) -- (-5,0) -- cycle;
+% \draw[dashed] (0,0) -- (4,0);
+% \draw[dashed] (-4,-1) -- (4,-1);
+% \draw[dashed] (-4,-2) -- (0,-2);
+% \draw[<->] (0,0) -- +(-1,0);
+% \draw[<->] (0,0) -- +(0,1);
+% \draw[<->] (4,0) -- +(1,0);
+% \draw[<->] (0,-2) -- +(1,0);
+% \draw[<->] (0,-2) -- +(0,-1);
+% \draw[<->] (-4,-2) -- +(-1,0);
+% \draw[<-] (-.5,0) to[out=90,in=0] +(-1,.5) node[left] {initial offset};
+% \draw[<-] (0,.5) to[out=0,in=180] +(1,0) node[right] {initial height};
+% \draw[<-] (4.5,0) to[out=90,in=-90] +(1,1.5) node[above] {right margin};
+% \draw[<-] (.5,-2) to[out=-90,in=180] +(1,-.5) node[right] {final offset};
+% \draw[<-] (0,-2.5) to[out=180,in=0] +(-1,0) node[left] {final depth};
+% \draw[<-] (-4.5,-2) to[out=90,in=-90] +(-1,1.5) node[above] {left margin};
+% \node[anchor=base] at (0,-1) {Multiple lines};
+% \end{tikzpicture}
+%
+% The \texttt{vertical} regions and the \texttt{box} are defined similarly.
+% With the vertical regions then the meaning of the \Verb!height!, \Verb!depth!, and \Verb!offset! are rotated \(90^\circ\), and the vertial regions don't stretch to the page boundaries.
+% The \texttt{box} region is always a rectangle.
+%
+% Once the region is defined, it can be styled using options directly on the \Verb!StartHighlighting! or \Verb!\Highlight! command and by using the following styles:
+%
+% \begin{itemize}
+% \item \texttt{every highlight picture}
+% \item \texttt{every <direction> highlight picture}
+% \item \texttt{every <layer> highlight picture}
+% \item \texttt{every highlight path}
+% \item \texttt{every <direction> highlight path}
+% \item \texttt{every <layer> highlight path}
+% \item \texttt{highlight path}
+% \item \texttt{<direction> highlight path}
+% \item \texttt{<layer> highlight path}
+% \end{itemize}
+%
+% The \Verb!picture! keys are for the surrounding \Verb!tikzpicture!, while the \Verb!path! keys are for the path itself.
+%
+% Lastly, a word about scoping the options.
+% Since the code that actually renders the highlighting is processed when the page is shipped out, it may well be that the settings in force when the highlighting was defined have changed.
+% The keys that adjust the size of the region (in the \Verb!highlighter! family) are saved at the moment of invocation but keys such as the colour or whether to fill or draw the path are not.
+% Therefore, it is wise to use styles that persist to set the rendering styles.
+%
+% \begin{example}
+% The sun was shining on the sea, shining with all its might.
+% \StartHighlighting[fill=cyan!50]
+% And this was very odd because it was the middle of the night.
+% \EndHighlighting
+% The moon was up there sulkily because she thought the sun had no
+% business to be there after the day was done.
+% \StartHighlighting[fill=magenta!50]
+% ``It's very rude of him,'' she said, ``to come and spoil the fun.''
+% \EndHighlighting
+
+% \noindent The sun was shining on the sea, shining with all its might.
+% And this was very odd because it was the middle of the night.
+% \StartHighlighting[fill=yellow!50]
+% The moon was up there sulkily because she thought the sun had no business to be there after the day was done\EndHighlighting.
+% ``It's very rude of him,'' she said, ``to come and spoil the fun.''
+% \end{example}
 %
 % \section{Acknowledgements}
 %
@@ -1781,6 +1890,11 @@ and the derived files           tikzmark.ins,
 %
 %    \begin{macrocode}  
 \ExplSyntaxOn
+\cs_new_protected:Nn \tikzmark_tl_put_right_braced:Nn
+ {
+  \tl_put_right:Nn #1 { { #2 } }
+ }
+\cs_generate_variant:Nn \tikzmark_tl_put_right_braced:Nn { NV, cV, cv, Nx, cx }
 %    \end{macrocode}
 %
 % This is how we handle return values from functions
@@ -2576,23 +2690,93 @@ and the derived files           tikzmark.ins,
 %
 % These are commands rather than an environment to allow it to span, for example, different parts of an aligned equation, and to make it possible to define overlapping highlighted sections.
 %    \begin{macrocode}
-\NewDocumentCommand \hlstart {O{highlighter} m}
-{%
-  \tikzmark_start_highlighting:nn {#1}{#2}
-  \tikzmark{highlight-start-#2}
+\tl_new:N \g__tikzmark_highlighter_tl
+\tl_set:Nn \g__tikzmark_highlighter_tl {tikzmark~ highlighter~}
+\int_new:N \g__tikzmark_highlighter_int
+\tl_new:N \l__tikzmark_start_tl
+\tl_new:N \l__tikzmark_end_tl
+\tl_new:N \l__tikzmark_highlighter_name_tl
+\tl_new:N \l__tikzmark_tmpa_tl
+\tl_new:N \l__tikzmark_tmpb_tl
+\tl_new:N \l__tikzmark_tmpc_tl
+
+\cs_new_protected_nopar:Npn \tikzmark_bake_highlighter:N #1
+{
+  \tl_clear:N #1
+  \clist_map_inline:nn {direction,layer}
+  {
+    \tl_put_right:Nx #1 {
+      /tikz/highlighter/##1=\pgfkeysvalueof{/tikz/highlighter/##1},
+    }
+  }
+  \clist_map_inline:nn {
+    initial~ height,
+    initial~ depth,
+    initial~ offset,
+    final~ height,
+    final~ depth,
+    final~ offset,
+    left~ margin,
+    right~ margin,
+    top~ margin,
+    bottom~ margin,
+  }
+  {
+    \tl_put_right:Nx #1 {
+      /tikz/highlighter/##1=\dim_eval:n {\pgfkeysvalueof{/tikz/highlighter/##1}},
+    }
+  }
 }
-\NewDocumentCommand \hlend {m}
+
+\cs_new_protected_nopar:Npn \tikzmark_start_highlighting:n #1
+{
+  \int_gincr:N \g__tikzmark_highlighter_int
+  \tl_set:Nx \l__tikzmark_highlighter_name_tl
+  {
+    \tl_use:N \g__tikzmark_highlighter_tl
+    \int_use:N \g__tikzmark_highlighter_int
+  }
+  \tl_set:Nn \l__tikzmark_tmpb_tl
+  {
+    every~ highlighter/.try,
+  }
+  \tikzmark_bake_highlighter:N \l__tikzmark_tmpc_tl
+  \tl_put_right:NV \l__tikzmark_tmpb_tl \l__tikzmark_tmpc_tl
+  \tl_put_right:Nn \l__tikzmark_tmpb_tl {#1}
+  \tikzmark_process_highlighting:VV
+  \l__tikzmark_tmpb_tl
+  \l__tikzmark_highlighter_name_tl
+  \tikzmark{highlight-start-\tl_use:N \l__tikzmark_highlighter_name_tl}
+}
+\cs_new_protected_nopar:Npn \tikzmark_end_highlighting:
+{
+  \tl_set:Nx \l__tikzmark_highlighter_name_tl
+  {
+    \tl_use:N \g__tikzmark_highlighter_tl
+    \int_use:N \g__tikzmark_highlighter_int
+  }
+  \tikzmark{highlight-end-\tl_use:N \l__tikzmark_highlighter_name_tl}
+}
+
+\NewDocumentCommand \StartHighlighting {O{}}
 {%
-  \tikzmark{highlight-end-#1}%
+  \tikzmark_start_highlighting:n {#1}
+}
+\NewDocumentCommand \EndHighlighting {}
+{%
+  \tikzmark_end_highlighting:
+}
+\NewDocumentCommand \Highlight {O{} m}
+{%
+  \tikzmark_start_highlighting:n {#1}
+  #2
+  \tikzmark_end_highlighting:
 }
 %    \end{macrocode}
 % \end{macro}
 %
 % The following code inserts the drawing command into the shipout hook.
 %    \begin{macrocode}
-\tl_new:N \l__tikzmark_start_tl
-\tl_new:N \l__tikzmark_end_tl
-\tl_new:N \l__tikzmark_highlight_tl
 %    \end{macrocode}
 % We need an ordinary colon, rather than a \LaTeX3 one
 %    \begin{macrocode}
@@ -2605,73 +2789,229 @@ and the derived files           tikzmark.ins,
 %    \end{macrocode}
 % 
 %    \begin{macrocode}
-\cs_new_protected_nopar:Npn \tikzmark_start_highlighting:nn #1#2
+\cs_new_protected_nopar:Npn \tikzmark_highlight_or_shunt:nnnn #1#2#3#4
 {
+%    \end{macrocode}
+% First, test to check if the tikzmarks are actually defined yet,
+% if not then bail out.
+%    \begin{macrocode}
+  \bool_lazy_all:nT
+  {
+    {\tl_if_exist_p:c {save@pt@\tikzmark@pp@name{#2}}}
+    {\tl_if_exist_p:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#2}}}}
+    {\tl_if_exist_p:c {save@pt@\tikzmark@pp@name{#3}}}
+    {\tl_if_exist_p:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#3}}}}
+  }
+  {
+%    \end{macrocode}
+% Okay, so all the tikzmarks are defined. Now see if we're on the
+% right page.  Is our start tikzmark in the future?
+%    \begin{macrocode}
+    \int_compare:nTF
+    {
+      \tl_use:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#2}}}
+      >
+      \the\value{page}
+    }
+    {
+%    \end{macrocode}
+% It is, so we just punt our highlighting down the line
+%    \begin{macrocode}
+      \hook_gput_next_code:nn {#1} {
+        \tikzmark_highlight_or_shunt:nnnn {#1}{#2}{#3}{#4}
+      }
+    }
+    {
+%    \end{macrocode}
+% It isn't, so we have some highlighting to do.
+% We need to build our highlighting code.
+%    \begin{macrocode}
+      \tl_set:Nn \l__tikzmark_tmpa_tl {#4}
+%    \end{macrocode}
+% Is our starting tikzmark on \emph{this} page?
+%    \begin{macrocode}
+      \int_compare:nTF
+      {
+        \tl_use:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#2}}}
+        =
+        \the\value{page}
+      }
+      {
+%    \end{macrocode}
+% It is, so we use the starting tikzmark as our first coordinate.
+%    \begin{macrocode}
+        \tl_put_right:Nx \l__tikzmark_tmpa_tl
+        {
+          {
+            pic~ cs
+            \tl_use:N \c__tikzmark_colon_tl
+            #2
+          }
+        }
+      }
+      {
+%    \end{macrocode}
+% It isn't, so we use the north west corner of the page
+%    \begin{macrocode}
+        \tl_put_right:Nn \l__tikzmark_tmpa_tl
+        {
+          {
+            page.north~ west
+          }
+        }
+      }
+%    \end{macrocode}
+% Is our ending tikzmark on \emph{this} page?
+%    \begin{macrocode}
+      \int_compare:nTF
+      {
+        \tl_use:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#3}}}
+        =
+        \the\value{page}
+      }
+      {
+%    \end{macrocode}
+% It is, so we use the ending tikzmark as our second coordinate.
+%    \begin{macrocode}
+        \tl_put_right:Nx \l__tikzmark_tmpa_tl
+        {
+          {
+            pic~ cs
+            \tl_use:N \c__tikzmark_colon_tl
+            #3
+          }
+        }
+      }
+      {
+%    \end{macrocode}
+% It isn't, so we use the south east corner of the page, and
+% we have to shunt the code to the next page.
+%    \begin{macrocode}
+        \tl_put_right:Nn \l__tikzmark_tmpa_tl
+        {
+          {
+            page.south~ east
+          }
+        }
+        \hook_gput_next_code:nn {#1} {
+          \tikzmark_highlight_or_shunt:nnnn {#1}{#2}{#3}{#4}
+        }
+      }
+%    \end{macrocode}
+% We've built our highlighting code, now's time to execute it.
+%    \begin{macrocode}
+      \tl_use:N \l__tikzmark_tmpa_tl
+    }
+  }
+}
+%    \end{macrocode}
+% 
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \tikzmark_process_highlighting:nn #1#2
+{
+  \pgfkeys{/tikz/highlighter/configuration/.activate~ family}
+  \pgfkeysfiltered{/tikz/.cd,highlighter/direction,highlighter/layer,#1}
+
   \tikzmark_fix_name:Nn \l__tikzmark_start_tl {highlight-start-#2}
   \tikzmark_fix_name:Nn \l__tikzmark_end_tl {highlight-end-#2}
-  \tl_set:Nn \l__tikzmark_highlight_tl
+  \tl_set:Nx \l__tikzmark_tmpa_tl {\pgfkeysvalueof{/tikz/highlighter/direction}}
+  \tl_clear:N \l__tikzmark_tmpb_tl
+  \tl_clear:N \l__tikzmark_tmpc_tl
+  \tl_if_eq:NnTF \l__tikzmark_tmpa_tl {vertical}
   {
-    \hl@draw{tikzmark~ clear~ ixes,#1}{highlighter}
+    \tl_put_right:Nn \l__tikzmark_tmpb_tl
+    {
+      \vl@draw
+    }
   }
-  \tl_put_right:Nx \l__tikzmark_highlight_tl
   {
+    \tl_if_eq:NnTF \l__tikzmark_tmpa_tl {box}
     {
-      pic~ cs
-      \tl_use:N \c__tikzmark_colon_tl
-      \tl_use:N \l__tikzmark_start_tl
+      \tl_put_right:Nn \l__tikzmark_tmpb_tl
+      {
+        \box@draw
+      }
     }
     {
-      pic~ cs
-      \tl_use:N \c__tikzmark_colon_tl
-      \tl_use:N \l__tikzmark_end_tl
+      \tl_put_right:Nn \l__tikzmark_tmpb_tl
+      {
+        \hl@draw
+      }
     }
+  }
+  
+  \tl_put_right:Nn \l__tikzmark_tmpb_tl
+  {
+    {tikzmark~ clear~ ixes,#1}
   }
 
-  \hook_gput_next_code:nV {shipout/background} \l__tikzmark_highlight_tl
+  \tl_set:Nx \l__tikzmark_tmpa_tl {\pgfkeysvalueof{/tikz/highlighter/layer}}
+  \tl_set:Nn \l__tikzmark_tmpc_tl
+  {
+    \tikzmark_highlight_or_shunt:nnnn
+  }
+  \tl_if_eq:NnTF \l__tikzmark_tmpa_tl {foreground}
+  {
+    \tl_put_right:Nn \l__tikzmark_tmpc_tl {{shipout/foreground}}
+  }
+  {
+    \tl_put_right:Nn \l__tikzmark_tmpc_tl {{shipout/background}}
+  }
+
+  \tikzmark_tl_put_right_braced:NV \l__tikzmark_tmpc_tl \l__tikzmark_start_tl
+  \tikzmark_tl_put_right_braced:NV \l__tikzmark_tmpc_tl \l__tikzmark_end_tl
+  \tikzmark_tl_put_right_braced:NV \l__tikzmark_tmpc_tl \l__tikzmark_tmpb_tl
+ 
+  \tl_if_eq:NnTF \l__tikzmark_tmpa_tl {foreground}
+  {
+    \hook_gput_next_code:nV {shipout/foreground} \l__tikzmark_tmpc_tl
+  }
+  {
+    \hook_gput_next_code:nV {shipout/background} \l__tikzmark_tmpc_tl
+  }
 }
-
+\cs_generate_variant:Nn  \tikzmark_process_highlighting:nn {nV,VV}
 \ExplSyntaxOff
 %    \end{macrocode}
 %
 % The command that draws the horizontal highligher or fader.
 % This fills a shape determined by two coordinates assumed to be (in effect) on the baseline of the start and end of the region to be highlighted.
 %    \begin{macrocode}
-\def\hl@draw#1#2#3#4{%
+\def\hl@draw#1#2#3{%
+  \pgfkeys{/tikz/highlighter/configuration/.activate family}
+  \pgfkeysfiltered{/tikz/.cd,highlighter/direction,highlighter/layer,#1}
   \begin{tikzpicture}[
     remember picture,
     overlay,
-    baseline=0pt,
-    /tikz/highlighter/.cd,
+    highlight picture action,
     #1,
-    /tikz/.cd,
-    highlight=#2,
-    every path/.append style={
-      highlight=#2
-    }
   ]%
 %
-  \tikz@scan@one@point\pgfutil@firstofone(#3)\relax
+  \page@node
+%
+  \tikz@scan@one@point\pgfutil@firstofone(#2)\relax
   \pgf@ya=\pgf@y
-  \tikz@scan@one@point\pgfutil@firstofone(#4)\relax
+  \tikz@scan@one@point\pgfutil@firstofone(#3)\relax
   \pgf@yb=\pgf@y
 %
   \ifdim\pgf@ya=\pgf@yb
 %
-  \path (#3)
+  \path (#2)
   ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},
   \pgfkeysvalueof{/tikz/highlighter/initial height})
   coordinate (start);
 %
-  \path (#4)
+  \path (#3)
   ++(\pgfkeysvalueof{/tikz/highlighter/final offset},
   -1*\pgfkeysvalueof{/tikz/highlighter/final depth})
   coordinate (end);
 %
-  \fill (start) rectangle (end);
+  \path[
+    highlight action,
+    #1
+  ] (start) rectangle (end);
 %
   \else
-%
-  \page@node
 %
   \path (page.east)
   ++(\pgfkeysvalueof{/tikz/highlighter/right margin},0pt)
@@ -2695,51 +3035,60 @@ and the derived files           tikzmark.ins,
 %
   \ifdim\pgf@yb>\pgf@ya
 %
-  \path (#3)
+  \path (#2)
   ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},
   \pgfkeysvalueof{/tikz/highlighter/initial height}) 
   coordinate (start);
 %
-  \path (#3)
+  \path (#2)
   ++(0pt,-1*\pgfkeysvalueof{/tikz/highlighter/final depth}) 
   coordinate (end);
 %
-  \fill (start) rectangle (end -| east);
+  \path[
+    highlight action,
+    #1
+  ] (start) rectangle (end -| east);
 %
-  \path (#4)
+  \path (#3)
   ++(0pt,\pgfkeysvalueof{/tikz/highlighter/initial height}) 
   coordinate (start);
 %
-  \path (#4)
+  \path (#3)
   ++(\pgfkeysvalueof{/tikz/highlighter/final offset},
   -1*\pgfkeysvalueof{/tikz/highlighter/final depth}) 
   coordinate (end);
 %
-  \fill (start -| west) rectangle (end);
+  \path[
+    highlight action,
+    #1
+  ] (start -| west) rectangle (end);
 %
   \else
 %
-  \path (#3)
+  \path (#2)
   ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},
   \pgfkeysvalueof{/tikz/highlighter/initial height}) 
   coordinate (tl);
 %
-  \path (#3)
+  \path (#2)
   ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},
   -1*\pgfkeysvalueof{/tikz/highlighter/initial depth}) 
   coordinate (start);
 %
-  \path (#4)
+  \path (#3)
   ++(\pgfkeysvalueof{/tikz/highlighter/final offset},
   -1*\pgfkeysvalueof{/tikz/highlighter/final depth}) 
   coordinate (end);
 %
-  \path (#4)
+  \path (#3)
   ++(\pgfkeysvalueof{/tikz/highlighter/final offset},
   \pgfkeysvalueof{/tikz/highlighter/final height}) 
   coordinate (mr);
 %
-  \fill (start) -- (tl) -- (tl -| east) -- (mr -| east) -- (mr) --
+  \path[
+    highlight action,
+    #1
+  ] (start) -- (tl) -- (tl -| east) -- (mr -| east) -- (mr) --
   (end) -- (end -| west) -- (start -| west) -- cycle;
 %
   \fi
@@ -2750,140 +3099,152 @@ and the derived files           tikzmark.ins,
 %
 % This one draws a box.
 %    \begin{macrocode}
-\def\box@draw#1#2#3#4{%
+\def\box@draw#1#2#3{%
+  \pgfkeys{/tikz/highlighter/configuration/.activate family}
+  \pgfkeysfiltered{/tikz/.cd,highlighter/direction,highlighter/layer,#1}
   \begin{tikzpicture}[
     remember picture,
     overlay,
-    baseline=0pt,
-    /tikz/highlighter/.cd,
+    highlight picture action,
     #1,
-    /tikz/.cd,
-    highlight=#2,
-    every path/.append style={
-      highlight=#2
-    }
   ]%
 %
-  \path (#3)
-  ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},
+  \tikz@scan@one@point\pgfutil@firstofone(#2)\relax
+  \pgf@xa=\pgf@x
+  \tikz@scan@one@point\pgfutil@firstofone(#3)\relax
+  \pgf@xb=\pgf@x
+%
+  \def\tkmk@high@bscale{1}%
+  \ifdim\pgf@xa>\pgf@xb
+  \def\tkmk@high@bscale{-1}%
+  \fi
+%
+  \path (#2)
+  ++({\tkmk@high@bscale*(-1)*\pgfkeysvalueof{/tikz/highlighter/initial offset}},
   \pgfkeysvalueof{/tikz/highlighter/initial height})
   coordinate (start);
 %
-  \path (#4)
-  ++(\pgfkeysvalueof{/tikz/highlighter/final offset},
+  \path (#3)
+  ++(\tkmk@high@bscale*\pgfkeysvalueof{/tikz/highlighter/final offset},
   -1*\pgfkeysvalueof{/tikz/highlighter/final depth})
   coordinate (end);
 %
-  \fill (start) rectangle (end);
+  \path[
+    highlight action,
+    #1
+  ] (start) rectangle (end);
   \end{tikzpicture}%
 }
 %    \end{macrocode}
 %
 % In this one the region is defined vertically.
 %    \begin{macrocode}
-\def\vl@draw#1#2#3#4{%
+\def\vl@draw#1#2#3{%
+  \pgfkeys{/tikz/highlighter/configuration/.activate family}
+  \pgfkeysfiltered{/tikz/.cd,highlighter/direction,highlighter/layer,#1}
   \begin{tikzpicture}[
     remember picture,
     overlay,
-    baseline=0pt,
-    /tikz/highlighter/.cd,
+    highlight picture action,
     #1,
-    /tikz/.cd,
-    highlight=#2,
-    every path/.append style={
-      highlight=#2
-    }
   ]%
-  \tikz@scan@one@point\pgfutil@firstofone(#3)\relax
-  \pgf@xa=\pgf@x
-  \tikz@scan@one@point\pgfutil@firstofone(#4)\relax
-  \pgf@xb=\pgf@x
-  \ifdim\pgf@xa=\pgf@xb
 %
-  \path (#3)
+  \tikz@scan@one@point\pgfutil@firstofone(#2)\relax
+  \pgf@ya=\pgf@y
+  \pgf@xa=\pgf@x
+  \tikz@scan@one@point\pgfutil@firstofone(#3)\relax
+  \pgf@yb=\pgf@y
+  \pgf@xb=\pgf@x
+%
+  \pgfmathsetlength\pgf@y{%
+    \pgfkeysvalueof{/tikz/highlighter/initial offset}%
+  }%
+  \advance\pgf@yb by \pgf@y
+  \pgfmathsetlength\pgf@y{%
+    -1*\pgfkeysvalueof{/tikz/highlighter/final offset}%
+  }%
+  \advance\pgf@ya by \pgf@y
+%
+  \ifdim\pgf@yb>\pgf@ya
+%
+  \ifdim\pgf@xa>\pgf@xb
+%
+  \path (#2)
   ++(\pgfkeysvalueof{/tikz/highlighter/initial height},
   \pgfkeysvalueof{/tikz/highlighter/initial offset})
   coordinate (start);
 %
-  \path (#4)
+  \path (#3)
   ++(-1*\pgfkeysvalueof{/tikz/highlighter/final depth},
   -1*\pgfkeysvalueof{/tikz/highlighter/final offset})
   coordinate (end);
-%
-  \fill (start) rectangle (end);
-%
+%  
   \else
 %
-  \page@node
-%
-  \path (page.north)
-  ++(\pgfkeysvalueof{/tikz/highlighter/top margin},0)
-  coordinate (north);
-%
-  \path (page.south)
-  ++(-1*\pgfkeysvalueof{/tikz/highlighter/bottom margin},0)
-  coordinate (south);
-%
-  \pgfmathsetlength\pgf@y{%
-    \pgfkeysvalueof{/tikz/highlighter/initial height}%
-  }%
-  \advance\pgf@xa by \pgf@y\relax
-  \pgfmathsetlength\pgf@y{%
-    -1*\pgfkeysvalueof{/tikz/highlighter/final depth}%
-  }%
-  \advance\pgf@xb by \pgf@y\relax
-%
-  \ifdim\pgf@xb<\pgf@xa
-%
-  \path (#3)
-  ++(\pgfkeysvalueof{/tikz/highlighter/initial height},
-  \pgfkeysvalueof{/tikz/highlighter/initial offset})
-  coordinate (start);
-%
-  \path (#3)
-  ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial depth},0pt)
-  coordinate (end);
-%
-  \fill (start) rectangle (end |- south);
-%
-  \path (#4)
-  ++(\pgfkeysvalueof{/tikz/highlighter/final height},0)
-  coordinate (start);
-%
-  \path (#4)
-  ++(-1*\pgfkeysvalueof{/tikz/highlighter/final depth},
-  -1*\pgfkeysvalueof{/tikz/highlighter/final depth})
-  coordinate (end);
-%
-  \fill (start) rectangle (end |- north);
-%
-  \else
-%
-  \path (#3)
+  \path (#2)
   ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial depth},
   \pgfkeysvalueof{/tikz/highlighter/initial offset})
   coordinate (start);
 %
   \path (#3)
-  ++(\pgfkeysvalueof{/tikz/highlighter/initial height},
-  \pgfkeysvalueof{/tikz/highlighter/initial offset})
+  ++(\pgfkeysvalueof{/tikz/highlighter/final height},
+  -1*\pgfkeysvalueof{/tikz/highlighter/final offset})
+  coordinate (end);
+%  
+  \fi
+%
+  \path[
+    highlight action,
+    #1
+  ] (start) rectangle (end);
+%
+  \else
+%
+  \path (#2)
+  ++(\pgfkeysvalueof{/tikz/highlighter/initial height},0)
+  coordinate (tr);
+%
+  \path (#2)
+  ++(0,\pgfkeysvalueof{/tikz/highlighter/initial offset})
+  coordinate (start);
+%
+  \path (#2)
+  ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial depth},0)
   coordinate (tl);
 %
-  \path (#4)
-  ++(-1*\pgfkeysvalueof{/tikz/highlighter/final depth},
-  -1*\pgfkeysvalueof{/tikz/highlighter/final offset})
-  coordinate (mr);
+  \path (#3)
+  ++(\pgfkeysvalueof{/tikz/highlighter/final height},0)
+  coordinate (br);
 %
-  \path (#4)
-  ++(\pgfkeysvalueof{/tikz/highlighter/final height},
-  -1*\pgfkeysvalueof{/tikz/highlighter/final offset}) 
+  \path (#3)
+  ++(0,-1*\pgfkeysvalueof{/tikz/highlighter/final offset})
   coordinate (end);
 %
-  \fill
-  (start) -- (tl) -- (tl |- north) -- (end |- north) --
-  (end) -- (mr) -- (mr |- south) -- (start |- south) -- cycle;
+  \path (#3)
+  ++(-1*\pgfkeysvalueof{/tikz/highlighter/final depth},0)
+  coordinate (bl);
+%
+  \tikz@scan@one@point\pgfutil@firstofone(#2)\relax
+  \pgf@xa=\pgf@x
+  \tikz@scan@one@point\pgfutil@firstofone(#3)\relax
+  \pgf@xb=\pgf@x
+%
+  \ifdim\pgf@xa<\pgf@xb
+%
+  \path[
+    highlight action,
+    #1
+  ] (tl) |- (start) -| (tr) -| (br) |- (end) -| (bl) -| cycle;
+%
+  \else
+%
+  \path[
+    highlight action,
+    #1
+  ] (tl) |- (start) -| (tr) |- (br) |- (end) -| (bl) |- cycle;
 %
   \fi
+%
   \fi
   \end{tikzpicture}
 }
@@ -2892,14 +3253,6 @@ and the derived files           tikzmark.ins,
 % These set various options.
 %    \begin{macrocode}
 \tikzset{%
-  highlight/.default=highlighter,
-  highlight/.style={
-    every #1/.try,
-    color=\pgfkeysvalueof{/tikz/#1/colour},
-    line width=\pgfkeysvalueof{/tikz/#1/width},
-    line cap=\pgfkeysvalueof{/tikz/#1/cap},
-    opacity=\pgfkeysvalueof{/tikz/#1/opacity},
-  },
   /tikz/highlighter/.is family,
   /tikz/highlighter/.unknown/.code={%
     \let\tk@searchname=\pgfkeyscurrentname%
@@ -2907,17 +3260,41 @@ and the derived files           tikzmark.ins,
       /tikz/\tk@searchname=#1
     }
   },
+  every highlight path/.style={
+    fill=yellow!50,
+    rounded corners,
+  },
+  every foreground highlight path/.style={
+    fill opacity=.5,
+  },
+  highlight picture action/.style={
+    every highlight picture/.try,
+    every \pgfkeysvalueof{/tikz/highlighter/direction} highlight picture/.try,
+    every \pgfkeysvalueof{/tikz/highlighter/layer} highlight picture/.try,
+  },
+  highlight action/.style={
+    every highlight path/.try,
+    every \pgfkeysvalueof{/tikz/highlighter/direction} highlight path/.try,
+    every \pgfkeysvalueof{/tikz/highlighter/layer} highlight path/.try,
+    highlight path/.try,
+    \pgfkeysvalueof{/tikz/highlighter/direction} highlight path/.try,
+    \pgfkeysvalueof{/tikz/highlighter/layer} highlight path/.try,
+  },
   /tikz/highlighter/.cd,
-  colour/.initial=yellow,
-  width/.initial=12pt,
-  cap/.initial=butt,
-  opacity/.initial=1,
+  direction/.initial=horizontal,
+  layer/.initial=background,
+  direction/.default=horizontal,
+  layer/.default=background,
   initial height/.initial=\baselineskip,
   initial depth/.initial=.5ex,
   initial offset/.initial=.5\baselineskip,
   final height/.initial=\baselineskip,
   final depth/.initial=.5ex,
   final offset/.initial=.5\baselineskip,
+  left margin/.initial=.5\baselineskip,
+  right margin/.initial=.5\baselineskip,
+  top margin/.initial=.5\baselineskip,
+  bottom margin/.initial=-.5\baselineskip,
   height/.style={
     initial height=#1,
     final height=#1
@@ -2936,16 +3313,9 @@ and the derived files           tikzmark.ins,
     top margin=#1,
     bottom margin=#1,
   },
-  left margin/.initial=.5\baselineskip,
-  right margin/.initial=.5\baselineskip,
-  top margin/.initial=.5\baselineskip,
-  bottom margin/.initial=-.5\baselineskip,
-  /tikz/fader/.is family,
-  /tikz/fader/.cd,
-  colour/.initial=gray,
-  width/.initial=12pt,
-  cap/.initial=butt,
-  opacity/.initial=.5,
+  /tikz/highlighter/configuration/.is family,
+  /tikz/highlighter/direction/.belongs to family=/tikz/highlighter/configuration,
+  /tikz/highlighter/layer/.belongs to family=/tikz/highlighter/configuration,
 }
 %    \end{macrocode}
 %
@@ -2960,6 +3330,8 @@ and the derived files           tikzmark.ins,
     minimum height=\textheight,
     anchor=north west,
     line width=0mm,
+    inner sep=0pt,
+    outer sep=0pt,
   ] (page) {};
 }
 %    \end{macrocode}
