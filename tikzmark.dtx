@@ -1588,13 +1588,15 @@ and the derived files           tikzmark.ins,
 %
 % \begin{macro}{\subnode}
 % Note: much of this code was inevitably adapted from the node defining code in the TikZ/PGF sources.
+%
+% The \Verb!\pgfmark! applies the current tikzmark prefix/suffix.
+% The current node prefix/suffix is applied by using the \Verb!name=! key.
 %    \begin{macrocode}
 \def\subnode@#1#2#3{%
   \begingroup
   \pgfmark{#2}%
   \setbox\pgfnodeparttextbox=\hbox\bgroup #3\egroup
-  \def\tikz@fig@name{#2}%
-  \tikzset{every subnode/.try,#1}%
+  \tikzset{every subnode/.try,#1,name=#2}%
   \pgfpointorigin
   \tikz@scan@one@point\pgfutil@firstofone(pic cs:#2)\relax
   \advance\pgf@x by .5\wd\pgfnodeparttextbox
@@ -1669,25 +1671,25 @@ and the derived files           tikzmark.ins,
   \edef\tzmk@pic%
   {\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-3\relax}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
-  \pgfutil@ifundefined{pgf@sh@ns@#2}{%
-    \pgfnodealias{#2}{#2-t}%
-    \@tikzmarkalias{#2}{#2-t}%
+  \pgfutil@ifundefined{pgf@sh@ns@\tikz@pp@name{#2}}{%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-t}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
   }{}%
   \else
-    \pgfnodealias{#2}{#2-d}%
-    \@tikzmarkalias{#2}{#2-d}%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-d}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-d}}%
   \fi
   \else
-    \pgfnodealias{#2}{#2-t}%
-    \@tikzmarkalias{#2}{#2-t}%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-t}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
   \fi
   \else
-    \pgfnodealias{#2}{#2-s}%
-    \@tikzmarkalias{#2}{#2-s}%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-s}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-s}}%
   \fi
   \else
-    \pgfnodealias{#2}{#2-ss}%
-    \@tikzmarkalias{#2}{#2-ss}%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-ss}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-ss}}%
   \fi
   \else
     \subnode@{#1}{#2}{#3}%
