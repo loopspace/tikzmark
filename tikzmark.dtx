@@ -211,7 +211,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{1654}
+% \CheckSum{1891}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -907,7 +907,7 @@ and the derived files           tikzmark.ins,
 % So the highlighting is on a separate layer to the text itself, which can be either behind or in front of the text layer.
 % The hook mechanisem also makes it relatively simple to support page breaks between the start and end of highlighting.
 %
-% Since the highlighting is separate to the flow of the text, it doesn't make sense to use an environment to mark the start and end of the highlighting so instead there are two commands: \Verb!\StartHighlighting[options]! and \Verb!\EndHighlighting!, or a single command \Verb!\Highlight[options]{text}! that just highlights the \Verb!text!.
+% Since the highlighting is separate to the flow of the text, it doesn't make sense to use an environment to mark the start and end of the highlighting so instead there are two commands: \Verb!\StartHighlighting[options]! and \Verb!\StopHighlighting!, or a single command \Verb!\Highlight[options]{text}! that just highlights the \Verb!text!.
 % At the moment, nesting highlighting is not supported.
 %
 % The optional argument to \Verb!\StartHighlighting! (or \Verb!\Highlight!) consists of key-value pairs that control the behaviour of the highlighted region.
@@ -1041,17 +1041,17 @@ and the derived files           tikzmark.ins,
 % The sun was shining on the sea, shining with all its might.
 % \StartHighlighting[fill=cyan!50]
 % And this was very odd because it was the middle of the night.
-% \EndHighlighting
+% \StopHighlighting
 % The moon was up there sulkily because she thought the sun had no
 % business to be there after the day was done.
 % \StartHighlighting[fill=magenta!50]
 % ``It's very rude of him,'' she said, ``to come and spoil the fun.''
-% \EndHighlighting
+% \StopHighlighting
 
 % \noindent The sun was shining on the sea, shining with all its might.
 % And this was very odd because it was the middle of the night.
 % \StartHighlighting[fill=yellow!50]
-% The moon was up there sulkily because she thought the sun had no business to be there after the day was done\EndHighlighting.
+% The moon was up there sulkily because she thought the sun had no business to be there after the day was done\StopHighlighting.
 % ``It's very rude of him,'' she said, ``to come and spoil the fun.''
 % \end{example}
 %
@@ -2685,12 +2685,13 @@ and the derived files           tikzmark.ins,
 }
 %    \end{macrocode}
 %
-% \begin{macro}{\hlstart,\hlend}
+% \begin{macro}{\StartHighlighting,\EndHighlighting,\Highlight}
 % These are the user interfaces for highlighting a section.
 % The first command inserts the drawing code into the relevant hook and places a tikzmark at the current location.
 % The second command indicates when the highlighting should stop.
+% The third is a short cut for highlighting its argument.
 %
-% These are commands rather than an environment to allow it to span, for example, different parts of an aligned equation, and to make it possible to define overlapping highlighted sections.
+% These are commands rather than an environment to allow it to span, for example, different parts of an aligned equation.
 %    \begin{macrocode}
 \tl_new:N \g__tikzmark_highlighter_tl
 \tl_set:Nn \g__tikzmark_highlighter_tl {tikzmark~ highlighter~}
@@ -2764,7 +2765,7 @@ and the derived files           tikzmark.ins,
 {%
   \tikzmark_start_highlighting:n {#1}
 }
-\NewDocumentCommand \EndHighlighting {}
+\NewDocumentCommand \StopHighlighting {}
 {%
   \tikzmark_end_highlighting:
 }
