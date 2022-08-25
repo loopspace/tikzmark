@@ -1,4 +1,7 @@
 *~
+*.png
+*.gls
+*.ilg
 *.aux
 *.log
 *.out
@@ -13,3 +16,4 @@
 README.txt
 *.code.tex
 CTAN
+tests
