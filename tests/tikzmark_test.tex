@@ -4,25 +4,19 @@
 \usepackage{tikz}
 \usepackage{lipsum}
 \usepackage{listings}
-\usetikzlibrary{arrows,tikzmark,fit,shadows}
+\usetikzlibrary{
+  arrows.meta,
+  tikzmark,
+  fit,
+  shadows
+}
 \usetikzmarklibrary{%
-%  highlight,
+  highlighting,
+  ams,
   listings
 }
 
-\newcommand{\tikzmarkset}[2]{
-	\pgfkeys{/tikz/#1/.cd,#2}
-}
-
-
-\makeatletter
-\newcommand\inpic[2]{%
-  \tikzset{remember picture with id=#1}
-  \tikz@scan@one@point\pgfutil@firstofone#2\relax
-  \protected@write\pgfutil@auxout{}{%
-    \string\savepointas{#1}{\pgfpictureid}{\the\pgf@x pt}{\the\pgf@y pt}}%
-}
-\makeatother
+\tikzset{>=Latex}
 
 \title{TikZmark Tests}
 \author{Andrew Stacey}
@@ -34,33 +28,58 @@
 
 \section{Basic Tests}
 
-This is a sentence with a \tikzmark{a}tikzmark in it.
+There is a tikzmark here\tikzmark{a} and a tikzmark here\tikzmark{b}.
+Let's join them together.
+\tikz[remember picture, overlay] {\draw[<->] (pic cs:a) to[out=90,in=90] (pic cs:b);}
 
-Let's point to the tikzmark, here it is!\tikzmark{b}
+There is a tikzmark node \tikzmarknode{c}{here} and a tikzmark node \tikzmarknode{d}{here}.
+Let's join them together.
+\tikz[remember picture, overlay] {\draw[<->,red] (pic cs:c) to[out=-90,in=-90] (pic cs:d); \draw[<->,blue] (c) to[out=90,in=90] (d);}
 
-\tikz[remember picture,overlay]
-{\draw[->] (pic cs:b) to[out=0,in=90] (pic cs:a);}
+Here is a tikzmark inside a tikz picture \tikz[remember picture] { \draw (0,0) rectangle (1,1); \tikzmark{f}{(.5,.5)}}.
+Now let's draw using it.\tikz[remember picture, overlay] {\draw[green,<-] (pic cs:f) -- +(0,1);}
 
+\section{Subnodes in Maths}
 
-Overlaying tikzmarks:\tikzmark{c}
-\tikz[overlay,remember picture]\tikzmark{d}{(pic cs:c)} \path (0,0);
-\tikz[overlay,remember picture]\node[draw] at (pic cs:d) {};
-
-\tikzmark{e}Where does this \begin{tikzpicture}[baseline=-5cm]
-\draw (0,0) -- +(2,0) node[right] (top) {\(0\)};
-\draw (0,-5) -- +(2,0) node[right] {\(-5\)};
-\node[above] at ([yshift=-1cm]top.south) {tikzmark should be here};
-\tikzmark{f}{([yshift=-1cm]top.south)}
-\end{tikzpicture} end up?\tikzmark{g}
-
-\begin{tikzpicture}[remember picture,overlay]
-\draw[->] (pic cs:e) to[bend right] (pic cs:f);
-\draw[->] (pic cs:e) to[bend right] (top);
-\draw[->] (pic cs:e) to[bend right] (pic cs:g);
+\begin{itemize}
+\item Display style
+\begin{tikzpicture}[remember picture,baseline=-1]
+\node {\(\displaystyle S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\node at (0,-1.5) {\(\displaystyle S_n = \subnode{da}{\sum_{k=0}^n r^k} = \frac{r^{n+1} - 1}{r-1} \)};
+\draw[->] (da.south east) to[bend left] (da.south west);
+\node[fit=(da),draw,inner sep=0pt,node contents={}];
 \end{tikzpicture}
 
+\item Text style
+\begin{tikzpicture}[remember picture,baseline=-1]
+\node {\(S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\node at (0,-1.5) {\(S_n = \subnode{ta}{\sum_{k=0}^n r^k} = \frac{r^{n+1} - 1}{r-1} \)};
+\draw[->] (ta.south east) to[bend left] (ta.south west);
+\node[fit=(ta),draw,inner sep=0pt,node contents={}];
+\end{tikzpicture}
 
-Testing transformations: there's a tikzmark\tikzmark{l} here
+\item Script style
+\begin{tikzpicture}[remember picture,baseline=-1]
+\node {\(S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\node at (0,-1.5) {\(S_n = \sum_{k=0}^{\subnode{sa}{n}} r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\draw[->] (sa.south east) to[bend left] (sa.south west);
+\node[fit=(sa),draw,inner sep=0pt,node contents={}];
+\end{tikzpicture}
+
+\item Script script style
+\begin{tikzpicture}[remember picture,baseline=-1]
+\node {\(\scriptstyle S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\node at (0,-1.5) {\(\scriptstyle S_n = \sum_{k=0}^{\subnode{ssa}{n}} r^k = \frac{r^{n+1} - 1}{r-1} \)};
+\draw[->] (ssa.south east) to[bend left] (ssa.south west);
+\node[fit=(ssa),draw,inner sep=0pt,node contents={}];
+\end{tikzpicture}
+
+\end{itemize}
+
+
+\section{Testing transformations}
+
+There's a tikzmark\tikzmark{l} here
 
 \begin{tikzpicture}[remember picture, overlay]
 \draw (0,0) -- (1,-1);
@@ -71,8 +90,6 @@ Testing transformations: there's a tikzmark\tikzmark{l} here
 \draw (0,0) -- (1,-1);
 \draw[->] (0,0) to[bend left] (pic cs:l);
 \end{tikzpicture}
-
-\newpage
 
 \section{Testing inside tikzpicture}
 
@@ -89,10 +106,6 @@ Testing transformations: there's a tikzmark\tikzmark{l} here
 \end{scope}
 \draw[->] (0,0) -- (pic cs:inside b);
 \end{tikzpicture}
-
-
-
-\newpage
 
 \section{Testing Prefix/Suffix}
 
@@ -171,45 +184,7 @@ Testing box sizes:
 \node[fit=(m),draw,inner sep=0pt] {};
 \end{tikzpicture}
 
-Testing maths:
-
-\begin{itemize}
-\item Display style
-\begin{tikzpicture}[remember picture,baseline=-1]
-\node {\(\displaystyle S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
-\node at (0,-1.5) {\(\displaystyle S_n = \subnode{da}{\sum_{k=0}^n r^k} = \frac{r^{n+1} - 1}{r-1} \)};
-\draw[->] (da.south east) to[bend left] (da.south west);
-\node[fit=(da),draw,inner sep=0pt,node contents={}];
-\end{tikzpicture}
-
-\item Text style
-\begin{tikzpicture}[remember picture,baseline=-1]
-\node {\(S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
-\node at (0,-1.5) {\(S_n = \subnode{ta}{\sum_{k=0}^n r^k} = \frac{r^{n+1} - 1}{r-1} \)};
-\draw[->] (ta.south east) to[bend left] (ta.south west);
-\node[fit=(ta),draw,inner sep=0pt,node contents={}];
-\end{tikzpicture}
-
-\item Script style
-\begin{tikzpicture}[remember picture,baseline=-1]
-\node {\(S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
-\node at (0,-1.5) {\(S_n = \sum_{k=0}^{\subnode{sa}{n}} r^k = \frac{r^{n+1} - 1}{r-1} \)};
-\draw[->] (sa.south east) to[bend left] (sa.south west);
-\node[fit=(sa),draw,inner sep=0pt,node contents={}];
-\end{tikzpicture}
-
-\item Script script style
-\begin{tikzpicture}[remember picture,baseline=-1]
-\node {\(\scriptstyle S_n = \sum_{k=0}^n r^k = \frac{r^{n+1} - 1}{r-1} \)};
-\node at (0,-1.5) {\(\scriptstyle S_n = \sum_{k=0}^{\subnode{ssa}{n}} r^k = \frac{r^{n+1} - 1}{r-1} \)};
-\draw[->] (ssa.south east) to[bend left] (ssa.south west);
-\node[fit=(ssa),draw,inner sep=0pt,node contents={}];
-\end{tikzpicture}
-
-\end{itemize}
-
 \newpage
-
 \section{Listings Tests}
 
 \tikzset{
@@ -307,7 +282,7 @@ Testing maths:
 }
 \end{lstlisting}
 
-\begin{tikzpicture}[remember picture,overlay,>=stealth']
+\begin{tikzpicture}[remember picture,overlay,>=Latex]
 \draw[<-,ultra thick] (pic cs:line-texcode-1-end) +(1em,.7ex) -| +(2.5,1) node[above,comment,thin] {Command name};
 \draw[<-,ultra thick] (pic cs:line-texcode-3-end) ++(1em,.7ex) -| +(5.8,1) node[above right,comment,thin] {Find previous line};
 \draw[<-,ultra thick] (pic cs:line-texcode-5-end) ++(1em,.7ex) -| +(2.2,.5) node[above,comment,thin] {If previous line exists, add to the list};
@@ -349,6 +324,42 @@ A\tikzmark{p} tikzmark \tikzmark{q}.
 
 \lipsum[1]
 \tikz[overlay,remember picture,ultra thick,red] \draw (0,0) -- (pic cs:s);
+
+\section{Highlighting}
+
+\lipsum*[3]
+\hlstart[fill,rounded corners]{lipsum}\lipsum*[2]\hlend{lipsum}
+\lipsum*[3]
+
+Here is a sentence \hlstart{short}with some highlighting\hlend{short}.
+A bit more to make a gap which should then break onto the next line.
+And then the highlighting ends.
+
+Here is a sentence with some highlighting.
+A bit more to make a gap \hlstart{break}which should then break onto the next line\hlend{break}.
+And then the highlighting ends.
+
+\newpage
+
+\section{AMS Equations}
+
+\begin{tikzmarkmath}[pythagoras]
+
+\begin{gather}
+a^2 = b^2 + c^2
+\end{gather}
+
+\begin{gather}
+a = \sqrt[2]{b^2 + c^2}
+\end{gather}
+\end{tikzmarkmath}
+
+\begin{tikzpicture}[remember picture, overlay]
+\foreach \k in {1,2,3,7,8} {
+  \draw[red]  (pic cs:pythagoras-\k) -- ++(135:1) node[draw,red,circle,font=\tiny,above left] {\k};
+  \node[draw,blue,fit=(pythagoras-\k),inner sep=0pt] {};
+}
+\end{tikzpicture}
 
 
 \end{document}
