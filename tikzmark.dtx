@@ -243,8 +243,13 @@ and the derived files           tikzmark.ins,
 % \changes{1.11}{2021/08/16}{Tikzmark inside a tikzpicture was not applying any surrounding transformation before saving the coordinates.  Code for adjusting a pic's location based on an internal coordinate.}
 % \changes{1.12}{2021/08/24}{Experimental library for creating pseudo-nodes around AMSMath equation alignment boxes.}
 % \changes{1.14}{2022/01/28}{Reimplementing the highlighting code using LaTeX3 hooks.}
+% \changes{1.15}{2022/08/24}{Improvements to highlighting code}
 %
 % \DoNotIndex{\newcommand,\newenvironment}
+% \pdfstringdefDisableCommands{%
+%  \def\\{}%
+%  \def\url#1{<#1>}%
+% }
 %
 % \GetFileInfo{tikzlibrarytikzmark.code.tex}
 % \providecommand*{\url}{\texttt}
@@ -1075,8 +1080,8 @@ and the derived files           tikzmark.ins,
 % The \Verb+save nodes+ code uses \LaTeX3.
 %    \begin{macrocode}
 \ProvidesFile{tikzlibrarytikzmark.code.tex}[%
-  2022/01/28
-  v1.14
+  2022/08/24
+  v1.15
   TikZ library for marking positions in a document]
 \RequirePackage{expl3, l3keys2e, xparse}
 %    \end{macrocode}
