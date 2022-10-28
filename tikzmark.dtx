@@ -850,6 +850,69 @@ and the derived files           tikzmark.ins,
 % \end{lstlisting}
 % \end{example}
 %
+% The \Verb+\balloon+ command was introduced in \href{https://tex.stackexchange.com/a/79787/86}{this question} on TeX-SX.
+% Its definition in this document is as follows:
+%
+% \begin{justexample}
+%  \newcommand\balloon[4]{%
+%    \pgfmathtruncatemacro\firstline{%
+%      #3-1
+%    }%
+%    \iftikzmark{line-#2-\firstline-start}{%
+%      \iftikzmark{line-#2-#3-first}{%
+%        \xdef\blines{({pic cs:line-#2-\firstline-start} -| {pic cs:line-#2-#3-first})}%
+%      }{%
+%        \iftikzmark{line-#2-#3-start}{%
+%          \xdef\blines{({pic cs:line-#2-\firstline-start} -| {pic cs:line-#2-#3-start})}%
+%        }{%
+%          \xdef\blines{(pic cs:line-#2-\firstline-start)}%
+%        }%
+%      }%
+%    }{%
+%      \xdef\blines{}%
+%    }%
+%    \foreach \k in {#3,...,#4} {%
+%      \iftikzmark{line-#2-\k-first}{%
+%        \xdef\blines{\blines (pic cs:line-#2-\k-first) }
+%      }{}
+%      \iftikzmark{line-#2-\k-end}{%
+%        \xdef\blines{\blines (pic cs:line-#2-\k-end) }
+%      }{}
+%    }%
+%    \ifx\blines\empty
+%    \else
+%    \edef\temp{\noexpand\tikz[remember         picture,overlay]{\noexpand\node[fit={\blines},balloon] (#1) {}}}%
+%    \temp
+%    \fi
+%  }
+%  \tikzset{
+%    line/.style={
+%      draw,
+%      rounded corners=3pt,
+%      -latex
+%    },
+%    balloon/.style={
+%      draw,
+%      fill=blue!20,
+%      opacity=0.4,
+%      inner sep=4pt,
+%      rounded corners=2pt
+%    },
+%    comment/.style={
+%      draw,
+%      fill=blue!70,
+%      text=white,
+%      text width=3cm,
+%      minimum height=1cm,
+%      rounded corners,
+%      drop shadow,
+%      align=left,
+%      font=\scriptsize
+%    },
+%  }
+% \end{justexample}
+%
+%
 % \subsection{AMS Equation Environments}
 %
 % \textbf{This is an experimental library.}
