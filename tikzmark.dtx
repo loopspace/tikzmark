@@ -172,7 +172,7 @@ and the derived files           tikzmark.ins,
     }%
     \ifx\blines\empty
     \else
-    \edef\temp{\noexpand\tikz[remember         picture,overlay]{\noexpand\node[fit={\blines},balloon] (#1) {}}}%
+    \edef\temp{\noexpand\tikz[remember         picture,overlay]{\noexpand\node[fit={\blines},balloon] (#1) {};}}%
     \temp
     \fi
   }
@@ -1790,7 +1790,7 @@ and the derived files           tikzmark.ins,
       node contents={#3},
       every tikzmarknode/.try,
       #1
-  ]}%
+  ];}%
 }
 
 \newcommand\tikzmarknode[3][]{%
