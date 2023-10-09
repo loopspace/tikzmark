@@ -2072,16 +2072,22 @@ and the derived files           tikzmark.ins,
 \cs_set_eq:NN \tikz_set_node_name:n \tikz@pp@name
 \cs_set_eq:NN \tikz_fig_must_be_named: \tikz@fig@mustbenamed
 
-\cs_new_nopar:Npn \tikz_scan_point:n #1
+\cs_if_exist:NF \tikz_scan_point:n
 {
-  \tikz@scan@one@point\pgfutil@firstofone#1\relax
+  \cs_new_nopar:Npn \tikz_scan_point:n #1
+  {
+    \tikz@scan@one@point\pgfutil@firstofone#1\relax
+  }
 }
 
-\cs_new_nopar:Npn \tikz_scan_point:NNn #1#2#3
+\cs_if_exist:NF \tikz_scan_point:NNn
 {
-  \tikz@scan@one@point\pgfutil@firstofone#3\relax
-  \dim_set_eq:NN #1 \pgf@x
-  \dim_set_eq:NN #2 \pgf@y
+  \cs_new_nopar:Npn \tikz_scan_point:NNn #1#2#3
+  {
+    \tikz@scan@one@point\pgfutil@firstofone#3\relax
+    \dim_set_eq:NN #1 \pgf@x
+    \dim_set_eq:NN #2 \pgf@y
+  }
 }
 
 \makeatother
@@ -2813,7 +2819,7 @@ and the derived files           tikzmark.ins,
   }
   \tikzmark_bake_highlighter:N \l__tikzmark_tmpc_tl
   \tl_put_right:NV \l__tikzmark_tmpb_tl \l__tikzmark_tmpc_tl
-  \tl_put_right:Nn \l__tikzmark_tmpb_tl {#1}
+  \tl_put_right:Nn \l__tikzmark_tmpb_tl {/tikz/highlighter/.cd,#1}
   \tikzmark_process_highlighting:VV
   \l__tikzmark_tmpb_tl
   \l__tikzmark_highlighter_name_tl
@@ -2980,8 +2986,9 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \tikzmark_process_highlighting:nn #1#2
 {
+  \group_begin:
   \pgfkeys{/tikz/highlighter/configuration/.activate~ family}
-  \pgfkeysfiltered{/tikz/.cd,highlighter/direction,highlighter/layer,#1}
+  \pgfkeysfiltered{/tikz/highlighter/.cd,direction,layer,#1}
 
   \tikzmark_fix_name:Nn \l__tikzmark_start_tl {highlight-start-#2}
   \tikzmark_fix_name:Nn \l__tikzmark_end_tl {highlight-end-#2}
@@ -3032,7 +3039,7 @@ and the derived files           tikzmark.ins,
   \tikzmark_tl_put_right_braced:NV \l__tikzmark_tmpc_tl \l__tikzmark_start_tl
   \tikzmark_tl_put_right_braced:NV \l__tikzmark_tmpc_tl \l__tikzmark_end_tl
   \tikzmark_tl_put_right_braced:NV \l__tikzmark_tmpc_tl \l__tikzmark_tmpb_tl
- 
+
   \tl_if_eq:NnTF \l__tikzmark_tmpa_tl {foreground}
   {
     \hook_gput_next_code:nV {shipout/foreground} \l__tikzmark_tmpc_tl
@@ -3040,6 +3047,7 @@ and the derived files           tikzmark.ins,
   {
     \hook_gput_next_code:nV {shipout/background} \l__tikzmark_tmpc_tl
   }
+  \group_end:
 }
 \cs_generate_variant:Nn  \tikzmark_process_highlighting:nn {nV,VV}
 \ExplSyntaxOff
@@ -3050,11 +3058,12 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \def\hl@draw#1#2#3{%
   \pgfkeys{/tikz/highlighter/configuration/.activate family}
-  \pgfkeysfiltered{/tikz/.cd,highlighter/direction,highlighter/layer,#1}
+  \pgfkeysfiltered{/tikz/highlighter/.cd,direction,layer,#1}
   \begin{tikzpicture}[
     remember picture,
     overlay,
     highlight picture action,
+    highlighter/.cd,
     #1,
   ]%
 %
@@ -3172,11 +3181,12 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \def\box@draw#1#2#3{%
   \pgfkeys{/tikz/highlighter/configuration/.activate family}
-  \pgfkeysfiltered{/tikz/.cd,highlighter/direction,highlighter/layer,#1}
+  \pgfkeysfiltered{/tikz/highlighter/.cd,direction,layer,#1}
   \begin{tikzpicture}[
     remember picture,
     overlay,
     highlight picture action,
+    highlighter/.cd,
     #1,
   ]%
 %
@@ -3212,11 +3222,12 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \def\vl@draw#1#2#3{%
   \pgfkeys{/tikz/highlighter/configuration/.activate family}
-  \pgfkeysfiltered{/tikz/.cd,highlighter/direction,highlighter/layer,#1}
+  \pgfkeysfiltered{/tikz/highlighter/.cd,direction,layer,#1}
   \begin{tikzpicture}[
     remember picture,
     overlay,
     highlight picture action,
+    highlighter/.cd,
     #1,
   ]%
 %
@@ -3329,6 +3340,13 @@ and the derived files           tikzmark.ins,
     \let\tk@searchname=\pgfkeyscurrentname%
     \pgfkeysalso{%
       /tikz/\tk@searchname=#1
+    }
+  },
+  /tikz/highlighter/highlighter/.is family,
+  /tikz/highlighter/highlighter/.unknown/.code={%
+    \let\tk@searchname=\pgfkeyscurrentname%
+    \pgfkeysalso{%
+      /tikz/highlighter/\tk@searchname=#1
     }
   },
   every highlight path/.style={
