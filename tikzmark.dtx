@@ -211,7 +211,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{1891}
+% \CheckSum{1902}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -703,6 +703,8 @@ and the derived files           tikzmark.ins,
 % \end{tikzpicture}
 % \end{example}
 %
+% \subsection{More Intricate Examples}
+%
 % The syntax for saving node data is illustrated by the following example.
 %
 % File \Verb+firstpicture.tex+:
@@ -772,6 +774,56 @@ and the derived files           tikzmark.ins,
 % \begin{center}
 % \fbox{\IfFileExists{tikzrefextnodes.pdf}{\includegraphics{tikzrefextnodes}}{}}
 % \end{center}
+%
+% One issue with placing things via \Verb+\tikzmark+ is that the necessity of using the \Verb+overlay+ key means that the various elements don't take up any space.
+% While this is needed to ensure that pictures don't explode in size, it can be important to leave space for the additional elements.
+% This isn't simple.
+% The difficulty is that \Verb+\tikzmark+ positions depend on the previous compilation, so if we're trying to leave space for items that depend on a previous compilation which might then affect the positions of the \Verb+\tikzmark+s then we can get into a loop that never settles down.
+% The solution is to ensure that the dependency loop doesn't arise, and that the way each measurement or position depends on others is a tree.
+%
+% There are two key parts to this.
+% The first is the \Verb+\tikz+ command that adds a vertical strut to reserve the right vertical space.
+% The second is the \Verb+tikzpicture+ that defines the annotations.
+% This defines \Verb+\tikzmark+s at its top and bottom extents and its baseline, but to ensure that the dependencies don't form a loop then all are defined inside that environment even though one of them is actually at the same location as a \Verb+\tikzmark+ defined elsewhere.
+% This can, therefore, take more compilations than usual to settle (the following example usually takes three).
+%
+% This example is based on my answer to \href{https://tex.stackexchange.com/q/361375/86}{How to add arrow in equations and matrix?}.
+%
+% \begin{example}
+% \tikzset{tikzmark prefix=ex7-}
+% \begin{align*}
+% A(\vec{u} + \vec{v}) &=
+% \begin{bmatrix} \vec{a}_1 & \vec{a}_2 & \vec{a}_3 \end{bmatrix}
+% \begin{bmatrix} u_1 + v_1 \\ u_2 + v_2 \\ u_3 + v_3 \end{bmatrix} \\
+% &= \tikzmarknode{uv1}{(u_1 + v_1)} \tikzmarknode{a1}{\vec{a}_1} +
+% \tikzmarknode{uv2}{(u_2 + v_2)} \tikzmarknode{a2}{\vec{a}_2} +
+% \tikzmarknode{uv3}{(u_3 + v_2)} \tikzmarknode{a3}{\vec{a}_3}
+% \tikz[remember picture,baseline={(0,0)}] {\path let \p1=(pic cs:upper), \p2=(pic cs:lower), \p3=(pic cs:middle) in (0,\y1-\y3) (0,\y2-\y3);}
+% \\
+% &= (u_1 \vec{a}_1 + u_2 \vec{a}_2 + u_3 \vec{a}_3) +
+% (v_1 \vec{a}_1 + v_2 \vec{a}_2 + v_3 \vec{a}_3) \\
+% &= A \vec{u} + A \vec{v}
+% \end{align*}
+% 
+% \begin{tikzpicture}[remember picture, overlay,>=Latex, cyan]
+%
+% \node[above right] (entries) at ($(a3.north east)+(1,.5)$) {Entries in \(\vec{u} + \vec{v}\)};
+% \node[below right] (columns) at ($(a3.south east)+(1,-.5)$) {Columns of \(A\)};
+%
+% \draw[<-,rounded corners] (uv1.north) |- (entries);
+% \draw[<-,rounded corners] (uv2.north) |- (entries);
+% \draw[<-,rounded corners] (uv3.north) |- (entries);
+% \draw[<-,rounded corners] (a1.south) |- (columns);
+% \draw[<-,rounded corners] (a2.south) |- (columns);
+% \draw[<-,rounded corners] (a3.south) |- (columns);
+%
+% \tikzmark{upper}{(entries.north)}
+% \tikzmark{lower}{(columns.south)}
+% \tikzmark{middle}{(a3.base)}
+% \end{tikzpicture}
+% 
+% \end{example}
+%
 %
 % \section{Additional Libraries}
 %
@@ -976,12 +1028,13 @@ and the derived files           tikzmark.ins,
 % The hook mechanisem also makes it relatively simple to support page breaks between the start and end of highlighting.
 %
 % Since the highlighting is separate to the flow of the text, it doesn't make sense to use an environment to mark the start and end of the highlighting so instead there are two commands: \Verb!\StartHighlighting[options]! and \Verb!\StopHighlighting!, or a single command \Verb!\Highlight[options]{text}! that just highlights the \Verb!text!.
-% At the moment, nesting highlighting is not supported.
+% At the moment, nesting highlighting is not supported but the plan is to implement it via an option to specify a name for a highlighting block.
 %
 % The optional argument to \Verb!\StartHighlighting! (or \Verb!\Highlight!) consists of key-value pairs that control the behaviour of the highlighted region.
 % There are particular keys in the \Verb!/tikz/highlighter! family which control the size of the highlighted region.
+% Note that both \Verb!\StartHighlighting! (or \Verb!\Highlight!) change the key directory to \Verb!/tikz/highlighter! so the following keys can be used as-is, and any unknown keys are passed back to the \Verb!/tikz/! directory so ordinary \Verb!tikz! keys can be used also as-is.
 %
-% The keys are as follows:
+% The \Verb+highlighter+ keys are as follows:
 %
 % \begin{itemize}
 % \item \texttt{direction}
@@ -1102,8 +1155,12 @@ and the derived files           tikzmark.ins,
 %
 % Lastly, a word about scoping the options.
 % Since the code that actually renders the highlighting is processed when the page is shipped out, it may well be that the settings in force when the highlighting was defined have changed.
-% The keys that adjust the size of the region (in the \Verb!highlighter! family) are saved at the moment of invocation but keys such as the colour or whether to fill or draw the path are not.
-% Therefore, it is wise to use styles that persist to set the rendering styles.
+% The keys that adjust the size of the region (in the \Verb!highlighter! family) are processed and saved at the moment of invocation but keys such as the colour or whether to fill or draw the path are passed without being processed.
+% Where this can cause issues is if those styles are themselves gathered into a single style.
+% This grouping style must be defined in a scope accessible to the code when the highlighting is rendered (so almost certainly it should be in a global scope), and if it is changed between when the highlighter is declared and is rendered then the latest version will be what is used.
+% Therefore, it is wise to use styles that persist to set the rendering styles and to avoid trying to be too cunning with changing styles.
+% 
+% An attempt has been made to ensure that setting the various options obeys \TeX's grouping, there might yet be a few bugs in this.
 %
 % \begin{example}
 % The sun was shining on the sea, shining with all its might.
