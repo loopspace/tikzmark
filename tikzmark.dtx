@@ -2169,11 +2169,18 @@ and the derived files           tikzmark.ins,
   \tl_clear:N \l__sn_tmpa_tl
 %    \end{macrocode}
 % Set the centre of the picture
-%    \begin{macrocode}  
-  \tikz_scan_point:NNn \l__sn_x_dim \l__sn_y_dim
-  {(current~ bounding~ box.center)}
-  \dim_set:Nn \l__sn_x_dim {-\l__sn_x_dim}
-  \dim_set:Nn \l__sn_y_dim {-\l__sn_y_dim}
+%    \begin{macrocode}
+  \tl_if_exist:NTF \pgfpictureid
+  {
+    \tikz_scan_point:NNn \l__sn_x_dim \l__sn_y_dim
+    {(current~ bounding~ box.center)}
+    \dim_set:Nn \l__sn_x_dim {-\l__sn_x_dim}
+    \dim_set:Nn \l__sn_y_dim {-\l__sn_y_dim}
+  }
+  {
+    \dim_zero:N \l__sn_x_dim
+    \dim_zero:N \l__sn_y_dim
+  }
   \tl_set:Nx \l__sn_centre_tl {
     {1}{0}{0}{1}{\dim_use:N \l__sn_x_dim}{\dim_use:N \l__sn_y_dim}
   }
@@ -2496,6 +2503,20 @@ and the derived files           tikzmark.ins,
     }
     {
       \clist_gput_right:Nn \g__sn_nodes_clist {#1}
+    }
+  },
+%    \end{macrocode}  
+% If wanting to save a tikzmarknode then one needs a single key that does both parts (adding the node name to the list and installs the saving code).
+%    \begin{macrocode}
+  save~ tikzmarknode/.code={
+    \tikz_fig_must_be_named:
+    \pgfkeysalso{
+      append~ after~ command={
+        \pgfextra{
+          \clist_gput_right:Nv \g__sn_nodes_clist {tikz@last@fig@name}
+          \maybe_save_nodes:
+        }
+      }
     }
   },
 %    \end{macrocode}  
@@ -3393,19 +3414,9 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \tikzset{%
   /tikz/highlighter/.is family,
-  /tikz/highlighter/.unknown/.code={%
-    \let\tk@searchname=\pgfkeyscurrentname%
-    \pgfkeysalso{%
-      /tikz/\tk@searchname=#1
-    }
-  },
+  /tikz/highlighter/.search also={/tikz,/pgf},
   /tikz/highlighter/highlighter/.is family,
-  /tikz/highlighter/highlighter/.unknown/.code={%
-    \let\tk@searchname=\pgfkeyscurrentname%
-    \pgfkeysalso{%
-      /tikz/highlighter/\tk@searchname=#1
-    }
-  },
+  /tikz/highlighter/highlighter/.search also={/tikz/highlighter,/tikz,/pgf},
   every highlight path/.style={
     fill=yellow!50,
     rounded corners,
