@@ -1412,10 +1412,13 @@ and the derived files           tikzmark.ins,
 %    \end{macrocode}
 %  
 % This code remembers the bounding box of a pic, saving it as if it were a node.
+% The \Verb+local bounding box+ keeps track of the size of the local scope, which since we're in a pic effectively means the size of the pic, saving it to a node as it goes along (so the current size of that node is the current size of the scope).
+% Since we're inside a pic, the name of the pic is automatically added as the prefix of node names so to make this externally have the same name as the pic then internally it has no name.
+% We wrap this in the \Verb+next pic+ style so that it only applies to the pic that is actually being used and not to any subpics that might exist within that outermost pic.
 %    \begin{macrocode}
-  save pic bounding box/.code={
-    \tikz@fig@mustbenamed
-    \tikzset{local bounding box/.expanded=\tikz@fig@name}
+  save pic bounding box/.code={%
+    \tikz@fig@mustbenamed%
+    \tikzset{local bounding box}%
   },
   surround pic/.style={
     next pic/.append style={

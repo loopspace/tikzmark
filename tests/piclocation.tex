@@ -42,4 +42,10 @@
 \pic[below=20pt of a,pic anchor] {location};
 \end{tikzpicture}
 
+\begin{tikzpicture}
+\pic[name=abc,surround pic] {location};
+\fill[red] (abc) circle[radius=5pt];
+\draw[green] (abc.north west) rectangle (abc.south east);
+\end{tikzpicture}
+
 \end{document}
