@@ -1025,7 +1025,7 @@ and the derived files           tikzmark.ins,
 %
 % The highlighting itself is done by inserting code in the shipout routine before the page itself is laid out.
 % So the highlighting is on a separate layer to the text itself, which can be either behind or in front of the text layer.
-% The hook mechanisem also makes it relatively simple to support page breaks between the start and end of highlighting.
+% The hook mechanism also makes it relatively simple to support page breaks between the start and end of highlighting.
 %
 % Since the highlighting is separate to the flow of the text, it doesn't make sense to use an environment to mark the start and end of the highlighting so instead there are two commands: \Verb!\StartHighlighting[options]! and \Verb!\StopHighlighting!, or a single command \Verb!\Highlight[options]{text}! that just highlights the \Verb!text!.
 % At the moment, nesting highlighting is not supported but the plan is to implement it via an option to specify a name for a highlighting block.
@@ -2952,13 +2952,14 @@ and the derived files           tikzmark.ins,
 %    \end{macrocode}
 % First, test to check if the tikzmarks are actually defined yet,
 % if not then bail out.
+% The names have already been frozen, so we don't wrap them in \Verb~\tikzmark@pp@name~ here.
 %    \begin{macrocode}
   \bool_lazy_all:nT
   {
-    {\tl_if_exist_p:c {save@pt@\tikzmark@pp@name{#2}}}
-    {\tl_if_exist_p:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#2}}}}
-    {\tl_if_exist_p:c {save@pt@\tikzmark@pp@name{#3}}}
-    {\tl_if_exist_p:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#3}}}}
+    {\tl_if_exist_p:c {save@pt@#2}}
+    {\tl_if_exist_p:c {save@pg@\tl_use:c{save@pt@#2}}}
+    {\tl_if_exist_p:c {save@pt@#3}}
+    {\tl_if_exist_p:c {save@pg@\tl_use:c{save@pt@#3}}}
   }
   {
 %    \end{macrocode}
@@ -2967,7 +2968,7 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
     \int_compare:nTF
     {
-      \tl_use:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#2}}}
+      \tl_use:c {save@pg@\tl_use:c{save@pt@#2}}
       >
       \the\value{page}
     }
@@ -2990,7 +2991,7 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
       \int_compare:nTF
       {
-        \tl_use:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#2}}}
+        \tl_use:c {save@pg@\tl_use:c{save@pt@#2}}
         =
         \the\value{page}
       }
@@ -3023,7 +3024,7 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
       \int_compare:nTF
       {
-        \tl_use:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#3}}}
+        \tl_use:c {save@pg@\tl_use:c{save@pt@#3}}
         =
         \the\value{page}
       }
@@ -3147,7 +3148,7 @@ and the derived files           tikzmark.ins,
     highlighter/.cd,
     #1,
   ]%
-%
+  %
   \page@node
 %
   \tikz@scan@one@point\pgfutil@firstofone(#2)\relax
