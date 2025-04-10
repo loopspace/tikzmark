@@ -17,7 +17,7 @@ documentation, run `pdflatex tikzmark.dtx`.
 
 The `tikzmark` package provides a variety of commands which have
 evolved over the years since I first defined it in 2009.  Much of this
-has taken place on the [TeX-SX Q&A](https://tex.stackexchance.com)
+has taken place on the [TeX-SX Q&A](https://tex.stackexchange.com)
 ([questions tagged
 `tikzmark`](https://tex.stackexchange.com/questions/tagged/tikzmark)
 and just [all posts mentioning `tikzmark`](https://tex.stackexchange.com/search?q=tikzmark))
