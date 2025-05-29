@@ -1287,6 +1287,24 @@ and the derived files           tikzmark.ins,
     }
   },
 %    \end{macrocode}
+%
+% With complicated \Verb+tikzmark+ stuff, because we are always using the results from a previous run then we can end up in a situation where precision errors mean that the stuff written out to the \Verb+aux+ file changes ever so slightly each time, meaning that the document never officially stabilises, but the difference is too small to notice.
+% One way to avoid this is to round the coordinates read in by the \Verb+pic cs+ syntax.
+%    \begin{macrocode}
+  tikzmark round/.code={
+    \def\tkmk@round{#1}%
+    \ifx\tkmk@round\tkmk@off
+    \tkmk@round@false
+    \else
+    \ifx\tkmk@round\tkmk@none
+    \tkmk@round@false
+    \else
+    \tkmk@round@true
+    \fi
+    \fi
+  },
+%    \end{macrocode}
+%  
 % Page handling
 %    \begin{macrocode}
   next page/.is choice,
@@ -1489,6 +1507,8 @@ and the derived files           tikzmark.ins,
 % \begin{macro}{pic}
 % This defines the new coordinate system.
 %    \begin{macrocode}
+\newif\iftkmk@round@
+\tkmk@round@false
 \tikzdeclarecoordinatesystem{pic}{%
   \pgfutil@in@,{#1}%
   \ifpgfutil@in@%
@@ -1515,6 +1535,10 @@ and the derived files           tikzmark.ins,
     {\pgfpointorigin\csname save@pt@\tmk@label @offset\endcsname}%
     \advance\pgf@xa by \pgf@x
     \advance\pgf@ya by \pgf@y
+    \iftkmk@round@
+    \pgfmathsetlength\pgf@xa{round(\pgf@xa * 10^\tkmk@round)/(10^\tkmk@round)}%
+    \pgfmathsetlength\pgf@ya{round(\pgf@ya * 10^\tkmk@round)/(10^\tkmk@round)}%
+    \fi
       \@ifundefined{save@pg@\csname save@pt@\tmk@label\endcsname}{}{%
         \@ifundefined{save@pg@\pgfpictureid}{}{%
           \pgfkeysvalueof{/tikz/next page vector}%

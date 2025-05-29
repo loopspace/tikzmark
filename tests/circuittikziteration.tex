@@ -1,0 +1,39 @@
+\documentclass{article}
+\usepackage{circuitikzgit}
+\usetikzlibrary{tikzmark,fpu}
+
+\tikzset{ov/.pic = {
+% reference anchor is -center
+    \draw coordinate(-center)
+    (-center) +(-1.2,-1) rectangle +(1.2,1)
+    (-center) ++(-1.2,0.8) coordinate (-in 1)
+    (-center) ++(-1.2,-0.8) coordinate (-in 2)
+    (-center) ++(1.2,0.8) coordinate (-out 1)
+    (-center) ++(1.2,-0.8) coordinate (-out 2)
+    (-center) ++(0,1) coordinate (-up)
+    (-in 1) -- ++(0.5,0) coordinate(-tmp)
+    to[leD*, diodes/scale=0.6, led arrows from cathode, name=-led]
+    (-tmp|- -in 2) -- (-in 2)
+    (-out 1) -- ++(-0.5,0) coordinate(-tmp)
+    to[pD*, diodes/scale=0.4, mirror, name=-pd1] ++(0,-0.5)
+    edge[densely dashed] ++(0,-0.533) ++(0,-0.566)
+    to[pD*, diodes/scale=0.4,mirror, name=-pd2] (-tmp|- -out 2) -- (-out 2)
+% leave the position of the path at the center
+    (-center);
+    }
+}
+\begin{document}
+
+Circuitikz: \pgfcircversion{} (\pgfcircversiondate)\par
+Ti\emph{k}Z: \pgfversion{} (\pgfversiondate)\par\bigskip
+
+
+\begin{tikzpicture}
+    \draw (0,0) pic(one) {ov};
+    \node [above] at (one-up) {O1};
+    \draw[color=blue] (one-out 1) -- ++(1,0)
+        % pic[pic anchor=(-in 1)](two) {ov};
+        pic[tikzmark round=2, rotate=45, transform shape, pic anchor=(-in 1)](two) {ov};
+    \node [above] at (two-up) {O2};
+\end{tikzpicture}
+\end{document}
