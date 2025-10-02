@@ -211,7 +211,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{1902}
+% \CheckSum{1934}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -1538,8 +1538,8 @@ and the derived files           tikzmark.ins,
     \advance\pgf@xa by \pgf@x
     \advance\pgf@ya by \pgf@y
     \iftkmk@round@
-    \pgfmathsetlength\pgf@xa{round(\pgf@xa * 10^\tkmk@round)/(10^\tkmk@round)}%
-    \pgfmathsetlength\pgf@ya{round(\pgf@ya * 10^\tkmk@round)/(10^\tkmk@round)}%
+    \pgfmathsetlength\pgf@xa{floor(\pgf@xa) + round((\pgf@xa - floor(\pgf@xa)) * 10^\tkmk@round)/(10^\tkmk@round)}%
+    \pgfmathsetlength\pgf@ya{floor(\pgf@ya) + round((\pgf@ya - floor(\pgf@ya)) * 10^\tkmk@round)/(10^\tkmk@round)}%
     \fi
       \@ifundefined{save@pg@\csname save@pt@\tmk@label\endcsname}{}{%
         \@ifundefined{save@pg@\pgfpictureid}{}{%
