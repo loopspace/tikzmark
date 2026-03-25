@@ -1814,7 +1814,7 @@ and the derived files           tikzmark.ins,
   }%
   \let\pgf@nodecallback\pgfutil@gobble
   \def\tzmk@prfx{pgf@sys@pdf@mark@pos@pgfid}%
-  \edef\tzmk@pic{\tzmk@prfx\the\pgf@picture@serial@count}
+  \edef\tzmk@pic{\tzmk@prfx\the\pgf@picture@serial@count}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
   \edef\tzmk@pic%
   {\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-1\relax}%
@@ -3483,22 +3483,22 @@ and the derived files           tikzmark.ins,
   top margin/.initial=.5\baselineskip,
   bottom margin/.initial=-.5\baselineskip,
   height/.style={
-    initial height=#1,
-    final height=#1
+    /tikz/highlighter/initial height=#1,
+    /tikz/highlighter/final height=#1
   },
   depth/.style={
-    initial depth=#1,
-    final depth=#1
+    /tikz/highlighter/initial depth=#1,
+    /tikz/highlighter/final depth=#1
   },
   offset/.style={
-    initial offset=#1,
-    final offset=#1
+    /tikz/highlighter/initial offset=#1,
+    /tikz/highlighter/final offset=#1
   },
   margin/.style={
-    left margin=#1,
-    right margin=#1,
-    top margin=#1,
-    bottom margin=#1,
+    /tikz/highlighter/left margin=#1,
+    /tikz/highlighter/right margin=#1,
+    /tikz/highlighter/top margin=#1,
+    /tikz/highlighter/bottom margin=#1,
   },
   /tikz/highlighter/configuration/.is family,
   /tikz/highlighter/direction/.belongs to family=/tikz/highlighter/configuration,
