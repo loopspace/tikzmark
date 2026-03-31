@@ -3297,7 +3297,8 @@ and the derived files           tikzmark.ins,
     highlighter/.cd,
     #1,
   ]%
-%
+  %
+  \page@node
   \tikz@scan@one@point\pgfutil@firstofone(#2)\relax
   \pgf@xa=\pgf@x
   \tikz@scan@one@point\pgfutil@firstofone(#3)\relax
@@ -3339,6 +3340,7 @@ and the derived files           tikzmark.ins,
     #1,
   ]%
 %
+  \page@node
   \tikz@scan@one@point\pgfutil@firstofone(#2)\relax
   \pgf@ya=\pgf@y
   \pgf@xa=\pgf@x
