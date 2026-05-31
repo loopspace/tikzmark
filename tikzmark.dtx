@@ -1056,7 +1056,14 @@ and the derived files           tikzmark.ins,
 % The highlighting code draws a region which can be styled with standard TikZ keys, more of which in a moment.
 % Although it is a single region, the \emph{intention} is to simulate using an actual highlighter.
 % The first key, \Verb!direction!, is used to draw the region as if the highlighter were used in a particular direction.
-% The options are \Verb!horizontal!, \Verb!vertical!, or \Verb!box!.
+% The options are \Verb!horizontal!, \Verb!vertical!, or \Verb!box!:
+%
+% \begin{itemize}
+% \item \Verb!horizontal! simulates a highlighter that goes across the page, so it starts at the starting mark and ``follows the lines'' until it reaches the ending mark.
+% \item \Verb!vertical! simulates a highlighter that goes down the page, so it starts at the starting mark, goes to the bottom of the page, then starts at the top again, and continues thusly until it reaches the ending mark.
+% \item \Verb!box! just creates a rectangular box from the starting mark to the ending mark.
+% \end{itemize}
+%
 % The default is \Verb!horizontal!.
 %
 % The second key, \Verb!layer!, determines whether the highlighter is rendered on the \Verb!background! or \Verb!foreground! layer.
@@ -1162,23 +1169,29 @@ and the derived files           tikzmark.ins,
 % 
 % An attempt has been made to ensure that setting the various options obeys \TeX's grouping, there might yet be a few bugs in this.
 %
+% \newpage
+%
 % \begin{example}
-% The sun was shining on the sea, shining with all its might.
-% \StartHighlighting[fill=cyan!50]
-% And this was very odd because it was the middle of the night.
-% \StopHighlighting
-% The moon was up there sulkily because she thought the sun had no
-% business to be there after the day was done.
-% \StartHighlighting[fill=magenta!50]
+% The sun was shining on the sea, shining with all its might. \\
+% \StartHighlighting[fill=cyan!50]%
+% And this was very odd because it was the middle of the night. \\
+% \StopHighlighting%
+% The moon was up there sulkily because she thought the sun \\
+% had no business to be there after the day was done. \\
+% \StartHighlighting[fill=magenta!50,direction=vertical]%
 % ``It's very rude of him,'' she said, ``to come and spoil the fun.''
-% \StopHighlighting
+% \StopHighlighting%
 
-% \noindent The sun was shining on the sea, shining with all its might.
-% And this was very odd because it was the middle of the night.
-% \StartHighlighting[fill=yellow!50]
-% The moon was up there sulkily because she thought the sun had no business to be there after the day was done\StopHighlighting.
+% \noindent The sun was shining on the sea, shining with all its might. \\
+% And this was very odd because it was the middle of the night. \\
+% \StartHighlighting[fill=yellow!50,direction=box]%
+% The moon was up there sulkily because she thought the sun \\
+% had no business to be there after the day was done\StopHighlighting. \\
 % ``It's very rude of him,'' she said, ``to come and spoil the fun.''
 % \end{example}
+%
+%
+% \newpage
 %
 % \section{Acknowledgements}
 %
@@ -1189,6 +1202,7 @@ and the derived files           tikzmark.ins,
 %
 % \StopEventually{}
 %
+% \newpage
 % \section{Implementation}
 %
 % \iffalse
@@ -1203,7 +1217,6 @@ and the derived files           tikzmark.ins,
   2022/08/24
   v1.15
   TikZ library for marking positions in a document]
-\RequirePackage{expl3, l3keys2e, xparse}
 %    \end{macrocode}
 %
 %    \begin{macrocode}
